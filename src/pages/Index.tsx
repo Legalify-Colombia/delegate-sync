@@ -1,11 +1,32 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { LogIn } from 'lucide-react';
 
 const Index = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary">
+      <div className="text-center max-w-md mx-auto p-8">
+        <h1 className="text-5xl font-bold mb-4 text-primary">MUN Manager</h1>
+        <p className="text-xl text-muted-foreground mb-8">
+          Sistema integral de gestión para Modelo de Naciones Unidas
+        </p>
+        <Button asChild size="lg" className="w-full">
+          <a href="/auth">
+            <LogIn className="h-5 w-5 mr-2" />
+            Iniciar Sesión
+          </a>
+        </Button>
       </div>
     </div>
   );
