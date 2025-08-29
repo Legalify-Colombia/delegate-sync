@@ -180,21 +180,27 @@ export default function CommitteeSecretaryDashboard() {
               <VotingPanel committeeId={committee.id} isSecretary={true} />
             </CardContent>
           </Card>
+
+          {/* Speaking Queue Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageSquare className="h-5 w-5" />
+                <span>Gestión de Intervenciones</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SpeakingQueue committeeId={committee.id} isSecretary={true} />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Delegate Rating */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Star className="h-5 w-5" />
-              <span>Calificación de Delegados</span>
-            </CardTitle>
-            <CardDescription>Evalúa el desempeño de los delegados en tu comité</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Sistema de calificación próximamente...</p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Detailed Rating */}
+          <DetailedRatingForm />
+
+          {/* Staff Requests */}
+          <StaffRequestManager />
       </main>
     </div>
   );

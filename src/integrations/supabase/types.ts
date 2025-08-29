@@ -125,6 +125,117 @@ export type Database = {
           },
         ]
       }
+      delegate_notes: {
+        Row: {
+          content: string
+          created_at: string
+          delegate_id: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          delegate_id: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          delegate_id?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      detailed_ratings: {
+        Row: {
+          additional_interventions: number
+          comments: string | null
+          committee_id: string
+          counterproposal_quality: number
+          created_at: string
+          delegate_id: string
+          dispositions_quality: number
+          id: string
+          personal_presentation: number
+          secretary_id: string
+          speech_appreciation: number
+        }
+        Insert: {
+          additional_interventions: number
+          comments?: string | null
+          committee_id: string
+          counterproposal_quality: number
+          created_at?: string
+          delegate_id: string
+          dispositions_quality: number
+          id?: string
+          personal_presentation: number
+          secretary_id: string
+          speech_appreciation: number
+        }
+        Update: {
+          additional_interventions?: number
+          comments?: string | null
+          committee_id?: string
+          counterproposal_quality?: number
+          created_at?: string
+          delegate_id?: string
+          dispositions_quality?: number
+          id?: string
+          personal_presentation?: number
+          secretary_id?: string
+          speech_appreciation?: number
+        }
+        Relationships: []
+      }
+      news_publications: {
+        Row: {
+          author_id: string
+          committee_id: string | null
+          content: string
+          cover_image_url: string | null
+          created_at: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          committee_id?: string | null
+          content: string
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          committee_id?: string | null
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           committee_id: string | null
@@ -194,6 +305,84 @@ export type Database = {
           id?: string
           score?: number
           secretary_id?: string
+        }
+        Relationships: []
+      }
+      speaking_queue: {
+        Row: {
+          committee_id: string
+          completed_at: string | null
+          delegate_id: string
+          id: string
+          position: number
+          requested_at: string
+          started_at: string | null
+          status: string
+          time_allocated: number | null
+        }
+        Insert: {
+          committee_id: string
+          completed_at?: string | null
+          delegate_id: string
+          id?: string
+          position: number
+          requested_at?: string
+          started_at?: string | null
+          status?: string
+          time_allocated?: number | null
+        }
+        Update: {
+          committee_id?: string
+          completed_at?: string | null
+          delegate_id?: string
+          id?: string
+          position?: number
+          requested_at?: string
+          started_at?: string | null
+          status?: string
+          time_allocated?: number | null
+        }
+        Relationships: []
+      }
+      staff_requests: {
+        Row: {
+          assigned_to: string | null
+          committee_id: string
+          completed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          requester_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          committee_id: string
+          completed_at?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          requester_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          committee_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          requester_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
