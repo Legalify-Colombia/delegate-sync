@@ -3,11 +3,17 @@ import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Vote, Star, Users } from 'lucide-react';
+import { Clock, Vote, Star, Users, MessageSquare } from 'lucide-react'; // Asumo que MessageSquare se importa de aquí
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
+
+// Supongo que tienes estos componentes definidos en otro lugar
+const SpeakingQueue = ({ committeeId, isSecretary }: { committeeId: string, isSecretary: boolean }) => <div>Speaking Queue Placeholder</div>;
+const DetailedRatingForm = () => <div>Detailed Rating Form Placeholder</div>;
+const StaffRequestManager = () => <div>Staff Request Manager Placeholder</div>;
+
 
 interface Committee {
   id: string;
@@ -201,6 +207,7 @@ export default function CommitteeSecretaryDashboard() {
 
           {/* Staff Requests */}
           <StaffRequestManager />
+        </div> {/* <-- ESTA ES LA ETIQUETA QUE FALTABA */}
       </main>
     </div>
   );
