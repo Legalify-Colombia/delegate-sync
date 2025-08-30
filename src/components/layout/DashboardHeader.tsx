@@ -12,7 +12,7 @@ interface DashboardHeaderProps {
   eventName?: string;
 }
 
-export function DashboardHeader({ eventName = "Simulación Global MUN 2024" }: DashboardHeaderProps) {
+export function DashboardHeader({ eventName = "The Resolution Hub" }: DashboardHeaderProps) {
   const { profile, signOut } = useAuth();
   const [isProfileOpen, setProfileOpen] = useState(false);
   const [isNotificationsOpen, setNotificationsOpen] = useState(false);
