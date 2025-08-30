@@ -52,7 +52,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
   // Form state
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedCommittee, setSelectedCommittee] = useState('');
+  const [selectedCommittee, setSelectedCommittee] = useState('none');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [editingPublication, setEditingPublication] = useState<NewsPublication | null>(null);
   
@@ -102,7 +102,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
   const resetForm = () => {
     setTitle('');
     setContent('');
-    setSelectedCommittee('');
+    setSelectedCommittee('none');
     setCoverImageUrl('');
     setEditingPublication(null);
   };
@@ -122,7 +122,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
     const publicationData = {
       title: title.trim(),
       content: content.trim(),
-      committee_id: selectedCommittee || null,
+      committee_id: selectedCommittee && selectedCommittee !== 'none' ? selectedCommittee : null,
       cover_image_url: coverImageUrl || null,
       status,
       author_id: profile.id,
@@ -175,7 +175,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
     setEditingPublication(publication);
     setTitle(publication.title);
     setContent(publication.content);
-    setSelectedCommittee(publication.committee_id || '');
+    setSelectedCommittee(publication.committee_id || 'none');
     setCoverImageUrl(publication.cover_image_url || '');
     setActiveTab('create');
   };
@@ -266,7 +266,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
                       <SelectValue placeholder="Selecciona el comité relacionado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin comité específico</SelectItem>
+                      <SelectItem value="none">Sin comité específico</SelectItem>
                       {committees.map((committee) => (
                         <SelectItem key={committee.id} value={committee.id}>
                           {committee.name}
