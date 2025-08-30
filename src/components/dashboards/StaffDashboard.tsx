@@ -17,7 +17,7 @@ const useAuth = () => ({
 const StaffRequestManager = ({ isStaff }: { isStaff: boolean }) => (<div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">Staff Request Manager</h3><p className="text-sm text-slate-600">(Aquí iría tu componente real)</p></div>);
 const NewsEditor = ({ showApprovalInterface }: { showApprovalInterface: boolean }) => (<div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">News Editor</h3><p className="text-sm text-slate-600">(Aquí iría tu componente real)</p></div>);
 const createSupabaseQueryBuilder = (tableName: string) => ({
-    _table: tableName, order() { return this; }, limit() { return this; }, select() { return this; },
+    _table: tableName, order(..._args: any[]) { return this; }, limit(..._args: any[]) { return this; }, select(..._args: any[]) { return this; },
     async then(resolve: (value: any) => void) {
         await new Promise(res => setTimeout(res, 1200));
         if (this._table === 'committees') {
@@ -216,9 +216,56 @@ const CommitteeList = ({ committees }: { committees: Committee[] }) => {
     return ( <div className="space-y-3"> <h3 className="text-xl font-bold text-slate-800 mb-4">Estado de Comités</h3> {committees.length > 0 ? committees.map((c, i) => { const styles = getStatusStyles(c.current_status); return ( <motion.div key={c.id} className={`p-4 bg-white rounded-lg border-l-4 ${styles.border} flex items-center justify-between shadow-sm transition-shadow hover:shadow-lg`} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }} > <div> <p className="font-semibold text-slate-800">{c.name}</p> <p className="text-sm text-slate-500">{c.topic}</p> </div> <span className={`px-3 py-1 text-xs font-bold rounded-full ${styles.bg} ${styles.text}`}> {getStatusText(c.current_status)} </span> </motion.div> ); }) : <p className="text-slate-500 text-center py-4">No se encontraron comités.</p>} </div> );
 };
 
-const ActivityView = ({ chartData, committees }: { chartData: any[], committees: Committee[] }) => {
-    const COLORS = { 'Active': '#22c55e', 'Voting': '#3b82f6', 'Paused': '#f59e0b' };
-    return ( <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4"> <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><Activity size={22}/> Resumen de Actividad</h3> <div className="h-48"> <ResponsiveContainer width="100%" height="100%"> <PieChart> <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5} cornerRadius={5}> {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[entry.name]} className="focus:outline-none" />)} </Pie> <Tooltip /> <Legend /> </PieChart> </ResponsiveContainer> </div> <div className="grid grid-cols-2 gap-4 text-center"> <div className="p-3 bg-slate-50 rounded-lg"> <p className="text-sm font-medium text-slate-500">Total</p> <AnimatedStat value={committees.length} /> </div> {chartData.map(item => ( <div key={item.name} className="p-3 bg-slate-50 rounded-lg"> <p className="text-sm font-medium text-slate-500">{item.name}</p> <AnimatedStat value={item.value} /> </div> ))} </div> </div> );
+const ActivityView = ({ chartData, committees }: { chartData: any[]; committees: Committee[] }) => {
+  const COLORS = { 'Active': '#22c55e', 'Voting': '#3b82f6', 'Paused': '#f59e0b' };
+  return (
+    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4">
+      <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+        <Activity size={22} /> Resumen de Actividad
+      </h3>
+      <div className="h-48">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={70}
+              paddingAngle={5}
+              cornerRadius={5}
+            >
+              <>
+                {chartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[entry.name]}
+                    className="focus:outline-none"
+                  />
+                ))}
+              </>
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="grid grid-cols-2 gap-4 text-center">
+        <div className="p-3 bg-slate-50 rounded-lg">
+          <p className="text-sm font-medium text-slate-500">Total</p>
+          <AnimatedStat value={committees.length} />
+        </div>
+        {chartData.map((item) => (
+          <div key={item.name} className="p-3 bg-slate-50 rounded-lg">
+            <p className="text-sm font-medium text-slate-500">{item.name}</p>
+            <AnimatedStat value={item.value} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const AnnouncementList = ({ announcements }: { announcements: Announcement[] }) => ( <div className="space-y-4"> <h3 className="text-xl font-bold text-slate-800 mb-4">Anuncios Recientes</h3> {announcements.length > 0 ? announcements.map(a => ( <motion.div key={a.id} className="border-b border-slate-200 pb-3 last:border-b-0" whileHover={{ x: 5 }}> <p className="font-semibold text-slate-800">{a.title}</p> <p className="text-sm text-slate-600 my-1">{a.content}</p> <p className="text-xs text-slate-400">{new Date(a.created_at).toLocaleString()}</p> </motion.div> )) : <p className="text-slate-500 text-center py-4">No hay anuncios recientes.</p>} </div> );
