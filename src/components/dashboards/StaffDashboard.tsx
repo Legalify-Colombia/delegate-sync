@@ -14,36 +14,43 @@ const useAuth = () => ({
     }
 });
 
+const mockData = {
+    committees: [
+        { id: 'c1', name: 'Consejo de Seguridad', topic: 'Amenazas de Ciberseguridad Global', current_status: 'active' },
+        { id: 'c2', name: 'OMS', topic: 'Tratado de Preparación para Pandemias', current_status: 'voting' },
+        { id: 'c3', name: 'ECOSOC', topic: 'Financiación de ODS', current_status: 'paused' },
+        { id: 'c4', name: 'Consejo de DDHH', topic: 'IA y Derechos Humanos', current_status: 'active' },
+    ],
+    announcements: [
+        { id: 'a1', title: 'Horario de Ceremonia de Apertura', content: 'La ceremonia iniciará a las 9:00 AM en el auditorio principal.', created_at: new Date().toISOString() },
+        { id: 'a2', title: 'Vouchers de Almuerzo Disponibles', content: 'Pueden recoger sus vouchers en el mostrador de registro.', created_at: new Date(Date.now() - 3600000).toISOString() },
+        { id: 'a3', title: 'Reunión de Staff', content: 'Reunión obligatoria para todo el staff a las 3:00 PM.', created_at: new Date(Date.now() - 7200000).toISOString() },
+    ]
+};
+
+const createMockQueryBuilder = (table: string) => {
+    const createPromise = () => {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                const data = mockData[table] || [];
+                resolve({ data, error: null });
+            }, 1500);
+        });
+    };
+
+    const builder = {
+        select: (columns: any) => builder,
+        order: (column: any, options?: any) => builder,
+        limit: (count: any) => builder,
+        then: (callback: any) => createPromise().then(callback),
+        catch: (callback: any) => createPromise().catch(callback)
+    };
+
+    return builder;
+};
+
 const supabase = {
-    from: (table) => ({
-        select: async (columns) => {
-            await new Promise(res => setTimeout(res, 1500));
-            if (table === 'committees') {
-                return {
-                    data: [
-                        { id: 'c1', name: 'Consejo de Seguridad', topic: 'Amenazas de Ciberseguridad Global', current_status: 'active' },
-                        { id: 'c2', name: 'OMS', topic: 'Tratado de Preparación para Pandemias', current_status: 'voting' },
-                        { id: 'c3', name: 'ECOSOC', topic: 'Financiación de ODS', current_status: 'paused' },
-                        { id: 'c4', name: 'Consejo de DDHH', topic: 'IA y Derechos Humanos', current_status: 'active' },
-                    ],
-                    error: null
-                };
-            }
-            if (table === 'announcements') {
-                return {
-                    data: [
-                        { id: 'a1', title: 'Horario de Ceremonia de Apertura', content: 'La ceremonia iniciará a las 9:00 AM en el auditorio principal.', created_at: new Date().toISOString() },
-                        { id: 'a2', title: 'Vouchers de Almuerzo Disponibles', content: 'Pueden recoger sus vouchers en el mostrador de registro.', created_at: new Date(Date.now() - 3600000).toISOString() },
-                        { id: 'a3', title: 'Reunión de Staff', content: 'Reunión obligatoria para todo el staff a las 3:00 PM.', created_at: new Date(Date.now() - 7200000).toISOString() },
-                    ],
-                    error: null
-                }
-            }
-            return { data: [], error: null };
-        },
-        order: () => supabase.from(table),
-        limit: () => supabase.from(table),
-    })
+    from: (table: string) => createMockQueryBuilder(table)
 };
 
 // Mock components
@@ -88,7 +95,7 @@ export default function StaffDashboard() {
                 const [committeesResponse, announcementsResponse] = await Promise.all([
                     supabase.from('committees').select('*').order('name'),
                     supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5)
-                ]);
+                ]) as [any, any];
 
                 if (committeesResponse.error) throw committeesResponse.error;
                 if (announcementsResponse.error) throw announcementsResponse.error;
