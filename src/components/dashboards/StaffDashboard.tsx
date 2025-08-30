@@ -1,37 +1,28 @@
 import { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Building, Activity, Newspaper, MessageSquare, Headphones, FileText, Loader2, Bell, User, LogOut } from 'lucide-react';
-// Para las animaciones, necesitarás instalar framer-motion: npm install framer-motion
+import { Building, Activity, Newspaper, MessageSquare, Headphones, FileText, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { animate } from "framer-motion"
-
-
-// --- Mocks para demostración (actualizado con nombre de usuario) ---
-const useAuth = () => ({ 
-    profile: { 
-        role: 'staff', 
-        name: 'Ana Torres', 
-        avatarUrl: `https://i.pravatar.cc/48?u=ana-torres` 
-    } 
-});
-const StaffRequestManager = ({ isStaff }: { isStaff: boolean }) => (<div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">Staff Request Manager</h3><p className="text-sm text-slate-600">(Aquí iría tu componente real)</p></div>);
-const NewsEditor = ({ showApprovalInterface }: { showApprovalInterface: boolean }) => (<div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">News Editor</h3><p className="text-sm text-slate-600">(Aquí iría tu componente real)</p></div>);
-const createSupabaseQueryBuilder = (tableName: string) => ({
-    _table: tableName, order(..._args: any[]) { return this; }, limit(..._args: any[]) { return this; }, select(..._args: any[]) { return this; },
-    async then(resolve: (value: any) => void) {
-        await new Promise(res => setTimeout(res, 1200));
-        if (this._table === 'committees') {
-            resolve({ data: [{ id: 'c1', name: 'Security Council', topic: 'Global Cybersecurity Threats', current_status: 'active' }, { id: 'c2', name: 'WHO', topic: 'Pandemic Preparedness Treaty', current_status: 'voting' }, { id: 'c3', name: 'ECOSOC', topic: 'Sustainable Development Goal Financing', current_status: 'paused' }, { id: 'c4', name: 'Human Rights Council', topic: 'AI and Human Rights', current_status: 'active' }], error: null });
-        } else if (this._table === 'announcements') {
-            resolve({ data: [{ id: 'a1', title: 'Opening Ceremony Schedule', content: 'The ceremony will begin at 9 AM sharp in the main hall.', created_at: new Date().toISOString() }, { id: 'a2', title: 'Lunch Vouchers Available', content: 'Please collect your lunch vouchers from the registration desk.', created_at: new Date(Date.now() - 3600000).toISOString() }], error: null });
-        } else { resolve({ data: [], error: null }); }
-    }
-});
-const supabase = { from: (table: string) => createSupabaseQueryBuilder(table) };
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import StaffRequestManager from '@/components/staff/StaffRequestManager';
+import NewsEditor from '@/components/press/NewsEditor';
 
 // --- Interfaces ---
-interface Committee { id: string; name: string; topic: string; current_status: 'active' | 'paused' | 'voting'; }
-interface Announcement { id: string; title: string; content: string; created_at: string; }
+interface Committee { 
+  id: string; 
+  name: string; 
+  topic: string; 
+  current_status: 'active' | 'paused' | 'voting'; 
+}
+
+interface Announcement { 
+  id: string; 
+  title: string; 
+  content: string; 
+  created_at: string; 
+}
 
 // --- Componente para animar números ---
 function AnimatedStat({ value }: { value: number }) {
@@ -51,65 +42,6 @@ function AnimatedStat({ value }: { value: number }) {
     return <span className="font-bold text-slate-800 text-2xl">{Math.round(displayValue)}</span>
 }
 
-// --- NUEVA Cabecera del Dashboard ---
-const DashboardHeader = ({ profile }) => {
-    const [isProfileOpen, setProfileOpen] = useState(false);
-    const eventName = "Simulación Global MUN 2024";
-
-    return (
-        <header className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    {/* Lado Izquierdo: Nombre del Evento */}
-                    <div className="flex items-center">
-                        <span className="font-bold text-lg text-indigo-600">{eventName}</span>
-                    </div>
-
-                    {/* Lado Derecho: Notificaciones y Perfil */}
-                    <div className="flex items-center gap-4">
-                        <button className="p-2 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
-                            <Bell size={20} />
-                        </button>
-
-                        <div className="relative">
-                            <button onClick={() => setProfileOpen(!isProfileOpen)} className="flex items-center gap-2">
-                                <img src={profile.avatarUrl} alt="Avatar de usuario" className="w-9 h-9 rounded-full border-2 border-transparent hover:border-indigo-500 transition-all" />
-                            </button>
-
-                            <AnimatePresence>
-                                {isProfileOpen && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                                        className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg ring-1 ring-black ring-opacity-5 origin-top-right"
-                                    >
-                                        <div className="py-1">
-                                            <div className="px-4 py-2 border-b border-slate-200">
-                                                <p className="text-sm font-semibold text-slate-800">{profile.name}</p>
-                                                <p className="text-xs text-slate-500 capitalize">{profile.role}</p>
-                                            </div>
-                                            <button 
-                                                onClick={() => alert('Cerrando sesión...')}
-                                                className="w-full text-left flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                            >
-                                                <LogOut size={16} />
-                                                Cerrar sesión
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
-};
-
-
 // --- Componente Principal del Dashboard ---
 export default function StaffDashboard() {
     const { profile } = useAuth();
@@ -121,21 +53,28 @@ export default function StaffDashboard() {
 
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true); setError(null);
+            setLoading(true); 
+            setError(null);
+            
             try {
                 const [committeesResponse, announcementsResponse] = await Promise.all([
                     supabase.from('committees').select('*').order('name'),
                     supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5)
                 ]);
+                
                 if (committeesResponse.error) throw committeesResponse.error;
                 if (announcementsResponse.error) throw announcementsResponse.error;
+                
                 setCommittees(committeesResponse.data || []);
                 setAnnouncements(announcementsResponse.data || []);
             } catch (err: any) {
                 console.error("Error fetching data:", err);
                 setError('Failed to load dashboard data.');
-            } finally { setLoading(false); }
+            } finally { 
+                setLoading(false); 
+            }
         };
+        
         fetchData();
     }, []);
 
@@ -153,7 +92,7 @@ export default function StaffDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-100 font-sans">
-            <DashboardHeader profile={profile} />
+            <DashboardHeader />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <h1 className="text-2xl font-bold text-slate-800">Panel de Control</h1>
@@ -268,7 +207,18 @@ const ActivityView = ({ chartData, committees }: { chartData: any[]; committees:
   );
 };
 
-const AnnouncementList = ({ announcements }: { announcements: Announcement[] }) => ( <div className="space-y-4"> <h3 className="text-xl font-bold text-slate-800 mb-4">Anuncios Recientes</h3> {announcements.length > 0 ? announcements.map(a => ( <motion.div key={a.id} className="border-b border-slate-200 pb-3 last:border-b-0" whileHover={{ x: 5 }}> <p className="font-semibold text-slate-800">{a.title}</p> <p className="text-sm text-slate-600 my-1">{a.content}</p> <p className="text-xs text-slate-400">{new Date(a.created_at).toLocaleString()}</p> </motion.div> )) : <p className="text-slate-500 text-center py-4">No hay anuncios recientes.</p>} </div> );
+const AnnouncementList = ({ announcements }: { announcements: Announcement[] }) => ( 
+  <div className="space-y-4"> 
+    <h3 className="text-xl font-bold text-slate-800 mb-4">Noticias y Anuncios Recientes</h3> 
+    {announcements.length > 0 ? announcements.map(a => ( 
+      <motion.div key={a.id} className="border-b border-slate-200 pb-3 last:border-b-0" whileHover={{ x: 5 }}>
+        <p className="font-semibold text-slate-800">{a.title}</p> 
+        <p className="text-sm text-slate-600 my-1">{a.content}</p> 
+        <p className="text-xs text-slate-400">{new Date(a.created_at).toLocaleString()}</p> 
+      </motion.div> 
+    )) : <p className="text-slate-500 text-center py-4">No hay anuncios recientes.</p>} 
+  </div> 
+);
 
 const ToolsView = ({ profile }: { profile: any }) => ( <div> <h3 className="text-xl font-bold text-slate-800 mb-4">Herramientas de Gestión</h3> {profile?.role === 'staff' && <StaffRequestManager isStaff={true} />} {profile?.role === 'press' && <NewsEditor showApprovalInterface={false} />} <div className="mt-6"> <h4 className="font-semibold text-slate-700 mb-2 flex items-center gap-2"><FileText size={18}/> Documentos y Recursos</h4> <div className="p-4 bg-slate-100 rounded-lg text-center"><p className="text-sm text-slate-600">Sistema de documentos próximamente...</p></div> </div> </div> );
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Header } from '@/components/layout/Header';
+import { motion } from 'framer-motion';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,28 +72,28 @@ export default function CommunicationsSecretaryDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div className="min-h-screen bg-slate-100">
+      <DashboardHeader />
       
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Panel del Secretario de Comunicaciones</h2>
-          <p className="text-muted-foreground">Gestiona anuncios y documentos del evento</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Panel del Secretario de Comunicaciones</h2>
+          <p className="text-sm text-slate-500">Gestiona anuncios y documentos del evento</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Create Announcement */}
-          <Card>
+          <Card className="bg-white shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
+              <CardTitle className="flex items-center space-x-2 text-slate-800">
                 <Plus className="h-5 w-5" />
                 <span>Crear Anuncio</span>
               </CardTitle>
-              <CardDescription>Publica un nuevo anuncio para todos los participantes</CardDescription>
+              <CardDescription className="text-slate-600">Publica un nuevo anuncio para todos los participantes</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Título</label>
+                <label className="text-sm font-medium mb-2 block text-slate-700">Título</label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -100,7 +101,7 @@ export default function CommunicationsSecretaryDashboard() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Contenido</label>
+                <label className="text-sm font-medium mb-2 block text-slate-700">Contenido</label>
                 <Textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -119,28 +120,28 @@ export default function CommunicationsSecretaryDashboard() {
           </Card>
 
           {/* Documents */}
-          <Card>
+          <Card className="bg-white shadow-md">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
+              <CardTitle className="flex items-center space-x-2 text-slate-800">
                 <FileText className="h-5 w-5" />
                 <span>Gestión de Documentos</span>
               </CardTitle>
-              <CardDescription>Administra documentos y recursos para delegados</CardDescription>
+              <CardDescription className="text-slate-600">Administra documentos y recursos para delegados</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Sistema de gestión de documentos próximamente...</p>
+              <p className="text-slate-500">Sistema de gestión de documentos próximamente...</p>
             </CardContent>
           </Card>
         </div>
 
         {/* News Management */}
-        <Card>
+        <Card className="bg-white shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 text-slate-800">
               <Newspaper className="h-5 w-5" />
               <span>Gestión de Noticias</span>
             </CardTitle>
-            <CardDescription>Aprueba o rechaza las publicaciones de prensa</CardDescription>
+            <CardDescription className="text-slate-600">Aprueba o rechaza las publicaciones de prensa</CardDescription>
           </CardHeader>
           <CardContent>
             <NewsEditor showApprovalInterface={true} />
@@ -148,29 +149,29 @@ export default function CommunicationsSecretaryDashboard() {
         </Card>
 
         {/* Recent Announcements */}
-        <Card>
+        <Card className="bg-white shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2 text-slate-800">
               <MessageSquare className="h-5 w-5" />
               <span>Anuncios Recientes</span>
             </CardTitle>
-            <CardDescription>Últimos anuncios publicados</CardDescription>
+            <CardDescription className="text-slate-600">Últimos anuncios publicados</CardDescription>
           </CardHeader>
           <CardContent>
             {announcements.length > 0 ? (
               <div className="space-y-4">
                 {announcements.slice(0, 5).map((announcement) => (
-                  <div key={announcement.id} className="p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-2">{announcement.title}</h4>
-                    <p className="text-sm text-muted-foreground mb-2">{announcement.content}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <div key={announcement.id} className="p-4 border border-slate-200 rounded-lg">
+                    <h4 className="font-semibold mb-2 text-slate-800">{announcement.title}</h4>
+                    <p className="text-sm text-slate-600 mb-2">{announcement.content}</p>
+                    <p className="text-xs text-slate-400">
                       {new Date(announcement.created_at).toLocaleString()}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No hay anuncios aún.</p>
+              <p className="text-slate-500">No hay anuncios aún.</p>
             )}
           </CardContent>
         </Card>

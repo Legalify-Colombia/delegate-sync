@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Header } from '@/components/layout/Header';
+import { motion, AnimatePresence } from 'framer-motion';
+import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Activity, MessageSquare, Building } from 'lucide-react';
@@ -9,13 +10,13 @@ export default function SecretaryGeneralDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div className="min-h-screen bg-slate-100">
+      <DashboardHeader />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-foreground mb-2">Panel del Secretario General</h2>
-          <p className="text-muted-foreground">Supervisa el funcionamiento global del evento MUN</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Panel del Secretario General</h2>
+          <p className="text-sm text-slate-500">Supervisa el funcionamiento global del evento MUN</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
