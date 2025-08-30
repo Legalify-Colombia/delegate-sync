@@ -1,47 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Building, Activity, Newspaper, MessageSquare, Headphones, FileText, Loader2 } from 'lucide-react';
-
-// Mock data and hooks for standalone demonstration
-// In a real app, these would be imported
-const useAuth = () => ({
-    profile: { role: 'staff' } // Can be 'staff', 'press', or other
-});
-
-const supabase = {
-    from: (table) => ({
-        select: async (columns) => {
-            await new Promise(res => setTimeout(res, 1500)); // Simulate network delay
-            if (table === 'committees') {
-                return {
-                    data: [
-                        { id: 'c1', name: 'Security Council', topic: 'Global Cybersecurity Threats', current_status: 'active' },
-                        { id: 'c2', name: 'WHO', topic: 'Pandemic Preparedness Treaty', current_status: 'voting' },
-                        { id: 'c3', name: 'ECOSOC', topic: 'Sustainable Development Goal Financing', current_status: 'paused' },
-                        { id: 'c4', name: 'Human Rights Council', topic: 'AI and Human Rights', current_status: 'active' },
-                    ],
-                    error: null
-                };
-            }
-            if (table === 'announcements') {
-                return {
-                    data: [
-                        { id: 'a1', title: 'Opening Ceremony Schedule', content: 'The ceremony will begin at 9 AM sharp in the main hall.', created_at: new Date().toISOString() },
-                        { id: 'a2', title: 'Lunch Vouchers Available', content: 'Please collect your lunch vouchers from the registration desk.', created_at: new Date(Date.now() - 3600000).toISOString() },
-                    ],
-                    error: null
-                }
-            }
-            return { data: [], error: null };
-        },
-        order: () => supabase.from(table),
-        limit: () => supabase.from(table),
-    })
-};
-
-// Mock components for demonstration
-const StaffRequestManager = ({ isStaff }) => <div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">Staff Request Manager</h3><p className="text-sm text-slate-600">Requests from secretaries will appear here.</p></div>;
-const NewsEditor = ({ showApprovalInterface }) => <div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">News Editor</h3><p className="text-sm text-slate-600">Create and manage press releases here.</p></div>;
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import StaffRequestManager from '@/components/staff/StaffRequestManager';
+import NewsEditor from '@/components/press/NewsEditor';
 
 
 // Main Dashboard Component
