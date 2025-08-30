@@ -32,7 +32,9 @@ const Index = () => {
                                 <a href="#features" className="hover:text-blue-600 transition-colors">Características</a>
                                 <a href="#how-it-works" className="hover:text-blue-600 transition-colors">¿Cómo funciona?</a>
                                 <a href="#" className="hover:text-blue-600 transition-colors">Precios</a>
+                                <a href="news" className="hover:text-blue-600 transition-colors">Noticias</a>
                             </nav>
+                            
                             <a href="/auth" className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition-colors border border-gray-300">
                                 Iniciar Sesión
                             </a>
