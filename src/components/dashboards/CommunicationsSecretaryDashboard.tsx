@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, FileText, Plus } from 'lucide-react';
+import { MessageSquare, FileText, Plus, Newspaper } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import NewsEditor from '@/components/press/NewsEditor';
 
 interface Announcement {
   id: string;
@@ -131,6 +132,20 @@ export default function CommunicationsSecretaryDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* News Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Newspaper className="h-5 w-5" />
+              <span>Gestión de Noticias</span>
+            </CardTitle>
+            <CardDescription>Aprueba o rechaza las publicaciones de prensa</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <NewsEditor showApprovalInterface={true} />
+          </CardContent>
+        </Card>
 
         {/* Recent Announcements */}
         <Card>

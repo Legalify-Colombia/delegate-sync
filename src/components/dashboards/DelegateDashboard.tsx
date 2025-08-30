@@ -8,6 +8,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
+import SpeakingQueue from '@/components/realtime/SpeakingQueue';
+import DelegateNotes from '@/components/delegate/DelegateNotes';
 
 interface Committee {
   id: string;
@@ -169,6 +171,30 @@ export default function DelegateDashboard() {
             </CardHeader>
             <CardContent>
               <VotingPanel committeeId={committee.id} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Speaking Queue */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista de Intervenciones</CardTitle>
+              <CardDescription>Solicita tu turno para hablar</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SpeakingQueue committeeId={committee.id} />
+            </CardContent>
+          </Card>
+
+          {/* Delegate Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Mis Notas</CardTitle>
+              <CardDescription>Notas privadas del debate</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DelegateNotes />
             </CardContent>
           </Card>
         </div>

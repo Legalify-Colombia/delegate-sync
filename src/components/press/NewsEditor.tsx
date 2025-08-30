@@ -38,11 +38,15 @@ interface NewsPublication {
   committees?: { name: string };
 }
 
-export default function NewsEditor() {
+interface NewsEditorProps {
+  showApprovalInterface?: boolean;
+}
+
+export default function NewsEditor({ showApprovalInterface = false }: NewsEditorProps) {
   const { profile } = useAuth();
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [publications, setPublications] = useState<NewsPublication[]>([]);
-  const [activeTab, setActiveTab] = useState('create');
+  const [activeTab, setActiveTab] = useState(showApprovalInterface ? 'list' : 'create');
   const [loading, setLoading] = useState(false);
   
   // Form state
@@ -73,14 +77,22 @@ export default function NewsEditor() {
   const fetchPublications = async () => {
     if (!profile) return;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('news_publications')
       .select(`
         *,
         committees (name)
-      `)
-      .eq('author_id', profile.id)
-      .order('updated_at', { ascending: false });
+      `);
+
+    if (showApprovalInterface) {
+      // Communications secretary sees all submitted publications
+      query = query.in('status', ['submitted_for_review', 'approved', 'rejected']);
+    } else {
+      // Press sees only their own publications
+      query = query.eq('author_id', profile.id);
+    }
+
+    const { data, error } = await query.order('updated_at', { ascending: false });
 
     if (!error) {
       setPublications((data as any) || []);
@@ -168,6 +180,21 @@ export default function NewsEditor() {
     setActiveTab('create');
   };
 
+  const handleApproval = async (publicationId: string, status: 'approved' | 'rejected') => {
+    const { error } = await supabase
+      .from('news_publications')
+      .update({ status })
+      .eq('id', publicationId);
+
+    if (!error) {
+      toast({
+        title: "Actualizado",
+        description: status === 'approved' ? 'Publicación aprobada' : 'Publicación rechazada',
+      });
+      fetchPublications();
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { label: 'Borrador', variant: 'secondary' as const },
@@ -197,126 +224,135 @@ export default function NewsEditor() {
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <FileText className="h-5 w-5" />
-          <span>Editor de Noticias</span>
+          <span>{showApprovalInterface ? 'Aprobación de Noticias' : 'Editor de Noticias'}</span>
         </CardTitle>
         <CardDescription>
-          Crea y gestiona publicaciones de prensa sobre los comités
+          {showApprovalInterface 
+            ? 'Aprueba o rechaza las publicaciones de prensa'
+            : 'Crea y gestiona publicaciones de prensa sobre los comités'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="create">
-              {editingPublication ? 'Editar' : 'Crear'} Publicación
+          <TabsList className={`grid w-full ${showApprovalInterface ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {!showApprovalInterface && (
+              <TabsTrigger value="create">
+                {editingPublication ? 'Editar' : 'Crear'} Publicación
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="list">
+              {showApprovalInterface ? 'Aprobar Publicaciones' : 'Mis Publicaciones'}
             </TabsTrigger>
-            <TabsTrigger value="list">Mis Publicaciones</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="create" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Título de la Noticia</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Título llamativo para la noticia..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="committee">Comité (Opcional)</Label>
-                <Select value={selectedCommittee} onValueChange={setSelectedCommittee}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el comité relacionado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Sin comité específico</SelectItem>
-                    {committees.map((committee) => (
-                      <SelectItem key={committee.id} value={committee.id}>
-                        {committee.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="coverImage">URL de Imagen de Portada (Opcional)</Label>
-                <div className="flex space-x-2">
+          {!showApprovalInterface && (
+            <TabsContent value="create" className="space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Título de la Noticia</Label>
                   <Input
-                    id="coverImage"
-                    value={coverImageUrl}
-                    onChange={(e) => setCoverImageUrl(e.target.value)}
-                    placeholder="https://ejemplo.com/imagen.jpg"
-                  />
-                  <Button variant="outline" size="icon">
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="content">Contenido de la Noticia</Label>
-                <Textarea
-                  id="content"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Escribe el contenido completo de la noticia..."
-                  rows={8}
-                />
-              </div>
-
-              {coverImageUrl && (
-                <div className="border rounded-lg p-4">
-                  <h4 className="text-sm font-medium mb-2 flex items-center space-x-2">
-                    <ImageIcon className="h-4 w-4" />
-                    <span>Vista previa de imagen</span>
-                  </h4>
-                  <img 
-                    src={coverImageUrl} 
-                    alt="Vista previa" 
-                    className="max-w-xs max-h-32 object-cover rounded"
-                    onError={() => setCoverImageUrl('')}
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Título llamativo para la noticia..."
                   />
                 </div>
-              )}
 
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button
-                  onClick={() => handleSave('draft')}
-                  variant="outline"
-                  disabled={loading}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Guardar Borrador
-                </Button>
-                
-                <Button
-                  onClick={() => handleSave('submitted_for_review')}
-                  disabled={loading}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar para Revisión
-                </Button>
-                
-                <Button
-                  onClick={() => handleSave('published_internal')}
-                  variant="secondary"
-                  disabled={loading}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Publicar Internamente
-                </Button>
+                <div>
+                  <Label htmlFor="committee">Comité (Opcional)</Label>
+                  <Select value={selectedCommittee} onValueChange={setSelectedCommittee}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el comité relacionado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin comité específico</SelectItem>
+                      {committees.map((committee) => (
+                        <SelectItem key={committee.id} value={committee.id}>
+                          {committee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                {editingPublication && (
-                  <Button onClick={resetForm} variant="ghost">
-                    Cancelar
-                  </Button>
+                <div>
+                  <Label htmlFor="coverImage">URL de Imagen de Portada (Opcional)</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="coverImage"
+                      value={coverImageUrl}
+                      onChange={(e) => setCoverImageUrl(e.target.value)}
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                    />
+                    <Button variant="outline" size="icon">
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="content">Contenido de la Noticia</Label>
+                  <Textarea
+                    id="content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Escribe el contenido completo de la noticia..."
+                    rows={8}
+                  />
+                </div>
+
+                {coverImageUrl && (
+                  <div className="border rounded-lg p-4">
+                    <h4 className="text-sm font-medium mb-2 flex items-center space-x-2">
+                      <ImageIcon className="h-4 w-4" />
+                      <span>Vista previa de imagen</span>
+                    </h4>
+                    <img 
+                      src={coverImageUrl} 
+                      alt="Vista previa" 
+                      className="max-w-xs max-h-32 object-cover rounded"
+                      onError={() => setCoverImageUrl('')}
+                    />
+                  </div>
                 )}
+
+                <div className="flex flex-wrap gap-2 pt-4 border-t">
+                  <Button
+                    onClick={() => handleSave('draft')}
+                    variant="outline"
+                    disabled={loading}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Guardar Borrador
+                  </Button>
+                  
+                  <Button
+                    onClick={() => handleSave('submitted_for_review')}
+                    disabled={loading}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Enviar para Revisión
+                  </Button>
+                  
+                  <Button
+                    onClick={() => handleSave('published_internal')}
+                    variant="secondary"
+                    disabled={loading}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Publicar Internamente
+                  </Button>
+
+                  {editingPublication && (
+                    <Button onClick={resetForm} variant="ghost">
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          )}
 
           <TabsContent value="list" className="space-y-4">
             {publications.length > 0 ? (
@@ -340,14 +376,35 @@ export default function NewsEditor() {
                         </p>
                       </div>
                       <div className="flex space-x-2 ml-4">
-                        {(publication.status === 'draft' || publication.status === 'rejected') && (
-                          <Button
-                            onClick={() => handleEdit(publication)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            Editar
-                          </Button>
+                        {showApprovalInterface && publication.status === 'submitted_for_review' ? (
+                          <>
+                            <Button
+                              onClick={() => handleApproval(publication.id, 'approved')}
+                              size="sm"
+                              variant="default"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Aprobar
+                            </Button>
+                            <Button
+                              onClick={() => handleApproval(publication.id, 'rejected')}
+                              size="sm"
+                              variant="destructive"
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Rechazar
+                            </Button>
+                          </>
+                        ) : (
+                          !showApprovalInterface && (publication.status === 'draft' || publication.status === 'rejected') && (
+                            <Button
+                              onClick={() => handleEdit(publication)}
+                              size="sm"
+                              variant="outline"
+                            >
+                              Editar
+                            </Button>
+                          )
                         )}
                       </div>
                     </div>
@@ -363,10 +420,17 @@ export default function NewsEditor() {
             ) : (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No tienes publicaciones aún</p>
-                <Button onClick={() => setActiveTab('create')} className="mt-2">
-                  Crear tu primera publicación
-                </Button>
+                <p className="text-muted-foreground">
+                  {showApprovalInterface 
+                    ? 'No hay publicaciones pendientes de aprobación'
+                    : 'No tienes publicaciones aún'
+                  }
+                </p>
+                {!showApprovalInterface && (
+                  <Button onClick={() => setActiveTab('create')} className="mt-2">
+                    Crear tu primera publicación
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>

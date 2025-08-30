@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building, MessageSquare, FileText, Activity } from 'lucide-react';
+import { Building, MessageSquare, FileText, Activity, Newspaper, Headphones } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import StaffRequestManager from '@/components/staff/StaffRequestManager';
+import NewsEditor from '@/components/press/NewsEditor';
 
 interface Committee {
   id: string;
@@ -20,6 +23,7 @@ interface Announcement {
 }
 
 export default function StaffDashboard() {
+  const { profile } = useAuth();
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,19 +183,53 @@ export default function StaffDashboard() {
           </CardContent>
         </Card>
 
-        {/* Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Documentos y Recursos</span>
-            </CardTitle>
-            <CardDescription>Accede a documentos oficiales del evento</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Sistema de documentos próximamente...</p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Staff Requests */}
+          {profile?.role === 'staff' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Headphones className="h-5 w-5" />
+                  <span>Solicitudes de Apoyo</span>
+                </CardTitle>
+                <CardDescription>Gestiona las solicitudes de los secretarios</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StaffRequestManager isStaff={true} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Press News */}
+          {profile?.role === 'press' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Newspaper className="h-5 w-5" />
+                  <span>Editor de Noticias</span>
+                </CardTitle>
+                <CardDescription>Crea y gestiona publicaciones de prensa</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NewsEditor showApprovalInterface={false} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Documents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Documentos y Recursos</span>
+              </CardTitle>
+              <CardDescription>Accede a documentos oficiales del evento</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Sistema de documentos próximamente...</p>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );

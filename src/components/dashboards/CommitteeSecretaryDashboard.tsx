@@ -3,16 +3,14 @@ import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Vote, Star, Users, MessageSquare } from 'lucide-react'; // Asumo que MessageSquare se importa de aquí
+import { Clock, Vote, Star, Users, MessageSquare, Headphones } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
-
-// Supongo que tienes estos componentes definidos en otro lugar
-const SpeakingQueue = ({ committeeId, isSecretary }: { committeeId: string, isSecretary: boolean }) => <div>Speaking Queue Placeholder</div>;
-const DetailedRatingForm = () => <div>Detailed Rating Form Placeholder</div>;
-const StaffRequestManager = () => <div>Staff Request Manager Placeholder</div>;
+import SpeakingQueue from '@/components/realtime/SpeakingQueue';
+import DetailedRatingForm from '@/components/ratings/DetailedRatingForm';
+import StaffRequestManager from '@/components/staff/StaffRequestManager';
 
 
 interface Committee {
@@ -196,18 +194,39 @@ export default function CommitteeSecretaryDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SpeakingQueue committeeId={committee.id} isSecretary={true} />
+              <SpeakingQueue committeeId={committee.id} />
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Detailed Rating */}
-          <DetailedRatingForm />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Star className="h-5 w-5" />
+                <span>Calificación Detallada</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DetailedRatingForm />
+            </CardContent>
+          </Card>
 
           {/* Staff Requests */}
-          <StaffRequestManager />
-        </div> {/* <-- ESTA ES LA ETIQUETA QUE FALTABA */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Headphones className="h-5 w-5" />
+                <span>Solicitudes de Staff</span>
+              </CardTitle>
+              <CardDescription>Solicita apoyo del equipo de staff</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StaffRequestManager isStaff={false} />
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );
