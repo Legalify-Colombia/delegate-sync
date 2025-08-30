@@ -9,7 +9,7 @@ const useAuth = () => ({ profile: { role: 'staff' } });
 const StaffRequestManager = ({ isStaff }: { isStaff: boolean }) => (<div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">Staff Request Manager</h3><p className="text-sm text-slate-600">(Aquí iría tu componente real)</p></div>);
 const NewsEditor = ({ showApprovalInterface }: { showApprovalInterface: boolean }) => (<div className="p-4 bg-slate-100 rounded-lg text-center"><h3 className="font-semibold">News Editor</h3><p className="text-sm text-slate-600">(Aquí iría tu componente real)</p></div>);
 const createSupabaseQueryBuilder = (tableName: string) => ({
-    _table: tableName, order() { return this; }, limit() { return this; }, select() { return this; },
+    _table: tableName, order(column?: string, options?: { ascending?: boolean }) { return this; }, limit(count?: number) { return this; }, select(columns?: string) { return this; },
     async then(resolve: (value: any) => void) {
         await new Promise(res => setTimeout(res, 1200));
         if (this._table === 'committees') {
