@@ -17,9 +17,9 @@ const Index = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary">
       <div className="text-center max-w-md mx-auto p-8">
-        <h1 className="text-5xl font-bold mb-4 text-primary">MUN Manager</h1>
+        <h1 className="text-5xl font-bold mb-4 text-primary">The Resolution Hub</h1>
         <p className="text-xl text-muted-foreground mb-8">
-          Sistema integral de gestión para Modelo de Naciones Unidas
+          Sistema de Gestión y Administración de Modelos de Naciones Unidas
         </p>
         <Button asChild size="lg" className="w-full">
           <a href="/auth">
