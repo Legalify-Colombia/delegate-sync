@@ -77,7 +77,11 @@ const TimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; s
 
 // Componente para mostrar al orador actual
 const CurrentSpeakerHeader = ({ speaker, isMotion }: { speaker: SpeakingQueue | null; isMotion?: boolean }) => {
-  if (!speaker) return <div className="min-w-[400px] h-[116px]"></div>;
+  if (!speaker) return (
+    <div className="min-w-[400px] h-[116px] bg-background/20 rounded-2xl flex items-center justify-center">
+      <p className="text-muted-foreground">No hay orador activo</p>
+    </div>
+  );
 
   return (
     <motion.div
@@ -86,14 +90,14 @@ const CurrentSpeakerHeader = ({ speaker, isMotion }: { speaker: SpeakingQueue | 
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      className="flex items-center gap-4 bg-background/20 p-3 rounded-2xl"
+      className="flex items-center gap-4 bg-background/20 p-3 rounded-2xl min-w-[400px]"
     >
       <img 
         src={speaker.profiles.photo_url || `https://placehold.co/128x128/E5E7EB/1F2937?text=${speaker.profiles.country_name.slice(0, 3).toUpperCase()}`} 
         alt={speaker.profiles.full_name} 
         className="w-20 h-20 rounded-full ring-4 ring-success object-cover" 
       />
-      <div>
+      <div className="flex-1">
         <AnimatePresence>
           {isMotion && 
             <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="flex items-center gap-2 text-warning font-bold text-sm">
@@ -101,9 +105,9 @@ const CurrentSpeakerHeader = ({ speaker, isMotion }: { speaker: SpeakingQueue | 
             </motion.div>
           }
         </AnimatePresence>
-        <p className="text-3xl font-bold">{speaker.profiles.country_name}</p>
-        <p className="text-md text-muted-foreground">{speaker.profiles.full_name}</p>
-        <p className="text-xs text-muted-foreground">{speaker.profiles['Entidad que representa']}</p>
+        <p className="text-3xl font-bold text-foreground">{speaker.profiles.country_name}</p>
+        <p className="text-lg text-muted-foreground">{speaker.profiles.full_name}</p>
+        <p className="text-sm text-muted-foreground">{speaker.profiles['Entidad que representa']}</p>
       </div>
     </motion.div>
   );
