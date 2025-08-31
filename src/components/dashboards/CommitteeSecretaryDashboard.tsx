@@ -4,9 +4,11 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Vote, Star, Users, MessageSquare, Headphones } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Clock, Vote, Star, Users, MessageSquare, Headphones, ExternalLink, Copy, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
 import SpeakingQueue from '@/components/realtime/SpeakingQueue';
@@ -67,10 +69,10 @@ export default function CommitteeSecretaryDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'voting': return 'bg-blue-500';
-      case 'paused': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
+      case 'active': return 'bg-success';
+      case 'voting': return 'bg-primary';
+      case 'paused': return 'bg-warning';
+      default: return 'bg-muted';
     }
   };
 
@@ -81,6 +83,21 @@ export default function CommitteeSecretaryDashboard() {
       case 'paused': return 'En Pausa';
       default: return 'Desconocido';
     }
+  };
+
+  const copyPublicLink = async () => {
+    const publicUrl = `${window.location.origin}/debate/${committee?.id}`;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast.success('Enlace copiado al portapapeles');
+    } catch (error) {
+      toast.error('Error al copiar el enlace');
+    }
+  };
+
+  const openPublicView = () => {
+    const publicUrl = `/debate/${committee?.id}`;
+    window.open(publicUrl, '_blank');
   };
 
   if (loading) {
@@ -107,7 +124,7 @@ export default function CommitteeSecretaryDashboard() {
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-background">
       <DashboardHeader />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -117,49 +134,62 @@ export default function CommitteeSecretaryDashboard() {
           animate="visible"
           className="space-y-6"
         >
-          <motion.div variants={itemVariants} className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Panel del Secretario de Comité</h2>
-            <p className="text-sm text-slate-500">Controla el debate y las votaciones de tu comité</p>
+          {/* Header */}
+          <motion.div variants={itemVariants}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Panel del Secretario de Comité</h1>
+                <p className="text-muted-foreground">Bienvenido. Controla y modera la sesión desde aquí.</p>
+              </div>
+            </div>
           </motion.div>
 
-          {/* Committee Info */}
+          {/* Committee Info Card */}
           <motion.div variants={itemVariants}>
-            <Card className="bg-white shadow-md">
-              <CardHeader>
+            <Card>
+              <CardContent className="pt-6">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center space-x-2 text-slate-800">
-                      <Users className="h-5 w-5" />
-                      <span>{committee.name}</span>
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-slate-600">{committee.topic}</CardDescription>
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-6 w-6 text-primary" />
+                    <div>
+                      <h2 className="text-xl font-bold text-foreground">{committee.name}</h2>
+                      <p className="text-muted-foreground">{committee.topic}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge 
-                      variant="secondary" 
-                      className={`${getStatusColor(committee.current_status)} text-white`}
-                    >
+                  <div className="flex items-center space-x-3">
+                    <Badge className={`${getStatusColor(committee.current_status)} text-primary-foreground`}>
                       {getStatusText(committee.current_status)}
                     </Badge>
+                    <Button variant="outline" size="sm" onClick={openPublicView}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ver Pantalla Pública
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={copyPublicLink}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar Enlace
+                    </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2">
+                
+                <div className="flex gap-2 mt-4">
+                  <p className="text-sm text-muted-foreground mr-4">Control de Sesión:</p>
                   <Button 
                     variant={committee.current_status === 'active' ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => updateCommitteeStatus('active')}
                   >
                     Iniciar Debate
                   </Button>
                   <Button 
-                    variant={committee.current_status === 'paused' ? 'default' : 'outline'}
+                    variant="outline"
+                    size="sm"
                     onClick={() => updateCommitteeStatus('paused')}
                   >
                     Pausar
                   </Button>
                   <Button 
                     variant={committee.current_status === 'voting' ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => updateCommitteeStatus('voting')}
                   >
                     Iniciar Votación
@@ -169,79 +199,99 @@ export default function CommitteeSecretaryDashboard() {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Timer Control */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Clock className="h-5 w-5" />
-                  <span>Control de Temporizador</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CommitteeTimer committeeId={committee.id} isSecretary={true} />
-              </CardContent>
-            </Card>
+          {/* Tabs */}
+          <motion.div variants={itemVariants}>
+            <Tabs defaultValue="debate" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="debate" className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Gestión del Debate</span>
+                </TabsTrigger>
+                <TabsTrigger value="delegates" className="flex items-center space-x-2">
+                  <Users className="h-4 w-4" />
+                  <span>Lista de Delegados</span>
+                </TabsTrigger>
+                <TabsTrigger value="requests" className="flex items-center space-x-2">
+                  <Headphones className="h-4 w-4" />
+                  <span>Solicitudes</span>
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Voting Control */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Vote className="h-5 w-5" />
-                  <span>Control de Votación</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <VotingPanel committeeId={committee.id} isSecretary={true} />
-              </CardContent>
-            </Card>
+              <TabsContent value="debate" className="space-y-6 mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Timer Control */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <Clock className="h-5 w-5" />
+                        <span>Control de Temporizador</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CommitteeTimer committeeId={committee.id} isSecretary={true} />
+                    </CardContent>
+                  </Card>
 
-            {/* Speaking Queue Management */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <MessageSquare className="h-5 w-5" />
-                  <span>Gestión de Intervenciones</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SpeakingQueue committeeId={committee.id} isSecretary={true} />
-              </CardContent>
-            </Card>
-          </motion.div>
+                  {/* Speaking Queue Management */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <MessageSquare className="h-5 w-5" />
+                        <span>Gestión de Intervenciones</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <SpeakingQueue committeeId={committee.id} isSecretary={true} />
+                    </CardContent>
+                  </Card>
+                </div>
 
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Detailed Rating */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Star className="h-5 w-5" />
-                  <span>Calificación Detallada</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DetailedRatingForm />
-              </CardContent>
-            </Card>
+                {/* Voting Control - Full Width */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Vote className="h-5 w-5" />
+                      <span>Control de Votación</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VotingPanel committeeId={committee.id} isSecretary={true} />
+                  </CardContent>
+                </Card>
 
-            {/* Staff Requests */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Headphones className="h-5 w-5" />
-                  <span>Solicitudes de Staff</span>
-                </CardTitle>
-                <CardDescription className="text-slate-600">Solicita apoyo del equipo de staff</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <StaffRequestManager isStaff={false} />
-              </CardContent>
-            </Card>
+                {/* Detailed Rating */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Star className="h-5 w-5" />
+                      <span>Calificación Detallada</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DetailedRatingForm />
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            {/* Attendance Control */}
-            <div className="lg:col-span-2">
-              <AttendancePanel committeeId={committee.id} />
-            </div>
+              <TabsContent value="delegates" className="mt-6">
+                <AttendancePanel committeeId={committee.id} />
+              </TabsContent>
+
+              <TabsContent value="requests" className="mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Headphones className="h-5 w-5" />
+                      <span>Solicitudes de Staff</span>
+                    </CardTitle>
+                    <CardDescription>Solicita apoyo del equipo de staff</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StaffRequestManager isStaff={false} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </motion.div>
         </motion.div>
       </main>
