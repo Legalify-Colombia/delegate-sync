@@ -291,6 +291,21 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
         variant: "destructive",
       });
     } else {
+      // Actualiza el temporizador principal del comité para que todas las vistas reaccionen en tiempo real
+      const endTime = new Date(Date.now() + timeAllocated * 1000).toISOString();
+      const { error: cErr } = await supabase
+        .from('committees')
+        .update({ current_timer_end: endTime })
+        .eq('id', committeeId);
+
+      if (cErr) {
+        toast({
+          title: "Temporizador principal no actualizado",
+          description: "No se pudo activar el temporizador del comité",
+          variant: "destructive",
+        });
+      }
+
       setTimeRemaining(timeAllocated);
       setIsTimerRunning(true);
       toast({
@@ -316,6 +331,12 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
         variant: "destructive",
       });
     } else {
+      // Detener el temporizador principal para reflejarse en todas las vistas
+      await supabase
+        .from('committees')
+        .update({ current_timer_end: null })
+        .eq('id', committeeId);
+
       setIsTimerRunning(false);
       setTimeRemaining(0);
     }
