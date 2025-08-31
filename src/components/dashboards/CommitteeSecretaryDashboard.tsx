@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
 import SpeakingQueue from '@/components/realtime/SpeakingQueue';
+import AttendancePanel from '@/components/realtime/AttendancePanel';
 import DetailedRatingForm from '@/components/ratings/DetailedRatingForm';
 import StaffRequestManager from '@/components/staff/StaffRequestManager';
 
@@ -236,6 +237,11 @@ export default function CommitteeSecretaryDashboard() {
                 <StaffRequestManager isStaff={false} />
               </CardContent>
             </Card>
+
+            {/* Attendance Control */}
+            <div className="lg:col-span-2">
+              <AttendancePanel committeeId={committee.id} />
+            </div>
           </motion.div>
         </motion.div>
       </main>

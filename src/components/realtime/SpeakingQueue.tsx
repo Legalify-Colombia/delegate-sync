@@ -86,26 +86,48 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
   }, [isTimerRunning, timeRemaining, currentSpeaker, isSecretary]);
 
   const fetchQueue = async () => {
-    const { data, error } = await supabase
-      .from('speaking_queue')
-      .select(`
-        *,
-        profiles!speaking_queue_delegate_id_fkey (
-          full_name,
-          countries (name)
-        )
-      `)
-      .eq('committee_id', committeeId)
-      .order('position', { ascending: true });
+    try {
+      // Fetch queue entries without joins to avoid FK name dependency
+      const { data: queueData, error: qErr } = await supabase
+        .from('speaking_queue')
+        .select('*')
+        .eq('committee_id', committeeId)
+        .order('position', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching queue:', error);
-    } else {
-      setQueue((data as any) || []);
-      const speaking = data?.find((entry: any) => entry.status === 'speaking');
+      if (qErr) {
+        console.error('Error fetching queue:', qErr);
+        setLoading(false);
+        return;
+      }
+
+      const queueEntries = (queueData as any[]) || [];
+      const delegateIds = Array.from(new Set(queueEntries.map((e: any) => e.delegate_id)));
+
+      let profilesMap: Record<string, { full_name: string; countries?: { name: string } } > = {};
+      if (delegateIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', delegateIds);
+
+        (profilesData as any[] | null)?.forEach((p: any) => {
+          profilesMap[p.id] = { full_name: p.full_name };
+        });
+      }
+
+      const merged = queueEntries.map((e: any) => ({
+        ...e,
+        profiles: profilesMap[e.delegate_id] || { full_name: 'Desconocido' },
+      }));
+
+      setQueue(merged as any);
+      const speaking = (merged as any[])?.find((entry: any) => entry.status === 'speaking');
       setCurrentSpeaker((speaking as any) || null);
+    } catch (err) {
+      console.error('Error fetching queue:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const requestToSpeak = async () => {
