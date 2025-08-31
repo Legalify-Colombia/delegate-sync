@@ -118,26 +118,32 @@ const CurrentSpeakerHeader = ({
 }) => {
   // Priorizar secretario si está hablando
   if (secretary?.is_active) {
+    console.log('Showing secretary speaker:', secretary);
     return (
       <motion.div
-        key={secretary.secretary_id}
+        key={`secretary-${secretary.secretary_id}`}
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -50 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl min-w-[400px]"
+        className="flex items-center gap-4 bg-blue-500/10 border border-blue-500/20 p-4 rounded-2xl min-w-[400px]"
       >
-        <div className="w-20 h-20 rounded-full ring-4 ring-primary bg-primary/20 flex items-center justify-center">
-          <Mic className="h-8 w-8 text-primary" />
+        <div className="w-20 h-20 rounded-full ring-4 ring-blue-500 bg-blue-500/20 flex items-center justify-center">
+          <Mic className="h-8 w-8 text-blue-500" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
-            <span className="text-xs font-medium text-primary uppercase tracking-wide">SECRETARIO HABLANDO</span>
+            <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>
+            <span className="text-xs font-medium text-blue-500 uppercase tracking-wide">SECRETARIO HABLANDO</span>
           </div>
           <p className="text-2xl font-bold text-foreground mb-1">Secretario de Comité</p>
           <p className="text-lg text-muted-foreground font-medium">{secretary.profiles.full_name}</p>
           <p className="text-sm text-muted-foreground">Moderando la sesión</p>
+          {secretary.started_at && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Desde: {new Date(secretary.started_at).toLocaleTimeString()}
+            </p>
+          )}
         </div>
       </motion.div>
     );
@@ -356,29 +362,30 @@ export default function PublicDebateView() {
       // Cargar estado del secretario hablando
       const { data: secretaryData } = await supabase
         .from('secretary_speaking')
-        .select(`
-          id,
-          secretary_id,
-          is_active,
-          started_at,
-          profiles!secretary_speaking_secretary_id_fkey (
-            full_name
-          )
-        `)
+        .select('*')
         .eq('committee_id', committeeId)
         .eq('is_active', true)
         .maybeSingle();
 
       if (secretaryData) {
+        // Cargar perfil del secretario por separado
+        const { data: secretaryProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', secretaryData.secretary_id)
+          .single();
+
         setSecretarySpeaking({
           id: secretaryData.id,
           secretary_id: secretaryData.secretary_id,
           is_active: secretaryData.is_active,
           started_at: secretaryData.started_at,
           profiles: {
-            full_name: (secretaryData.profiles as any)?.full_name || 'Secretario'
+            full_name: secretaryProfile?.full_name || 'Secretario de Comité'
           }
         });
+      } else {
+        setSecretarySpeaking(null);
       }
       setIsVotingActive(committeeData?.current_status === 'voting');
       
@@ -648,27 +655,26 @@ export default function PublicDebateView() {
         
         const { data: secretaryData } = await supabase
           .from('secretary_speaking')
-          .select(`
-            id,
-            secretary_id,
-            is_active,
-            started_at,
-            profiles!secretary_speaking_secretary_id_fkey (
-              full_name
-            )
-          `)
+          .select('*')
           .eq('committee_id', committeeId)
           .eq('is_active', true)
           .maybeSingle();
 
         if (secretaryData) {
+          // Cargar perfil del secretario por separado
+          const { data: secretaryProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', secretaryData.secretary_id)
+            .single();
+
           setSecretarySpeaking({
             id: secretaryData.id,
             secretary_id: secretaryData.secretary_id,
             is_active: secretaryData.is_active,
             started_at: secretaryData.started_at,
             profiles: {
-              full_name: (secretaryData.profiles as any)?.full_name || 'Secretario'
+              full_name: secretaryProfile?.full_name || 'Secretario de Comité'
             }
           });
         } else {
