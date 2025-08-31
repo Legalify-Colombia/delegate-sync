@@ -90,6 +90,7 @@ export default function AdvancedVotingPanel({
   });
 
   useEffect(() => {
+    console.log('AdvancedVotingPanel mounted with committeeId:', committeeId);
     if (committeeId) {
       fetchCurrentSession();
       fetchDelegates();
@@ -98,12 +99,15 @@ export default function AdvancedVotingPanel({
   }, [committeeId]);
 
   const fetchCurrentSession = async () => {
-    const { data: sessionData } = await supabase
+    console.log('Fetching voting session for committee:', committeeId);
+    const { data: sessionData, error } = await supabase
       .from('voting_sessions')
       .select('*')
       .eq('committee_id', committeeId)
-      .eq('status', 'active')
+      .in('status', ['active', 'pending'])
       .maybeSingle();
+
+    console.log('Voting session data:', sessionData, 'Error:', error);
 
     if (sessionData) {
       setCurrentSession(sessionData as VotingSession);
