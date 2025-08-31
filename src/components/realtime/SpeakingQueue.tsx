@@ -306,6 +306,27 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
         });
       }
 
+      // Registrar participación en agenda si hay una activa
+      const { data: activeAgenda } = await supabase
+        .from('agenda_items')
+        .select('id')
+        .eq('committee_id', committeeId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (activeAgenda) {
+        const speakingEntry = queue.find(entry => entry.id === entryId);
+        if (speakingEntry) {
+          await supabase.rpc('register_agenda_participation', {
+            p_agenda_item_id: activeAgenda.id,
+            p_delegate_id: speakingEntry.delegate_id,
+            p_committee_id: committeeId,
+            p_participation_type: speakingEntry.type || 'speech',
+            p_time_used: 0 // Se actualizará cuando termine
+          });
+        }
+      }
+
       setTimeRemaining(timeAllocated);
       setIsTimerRunning(true);
       toast({
@@ -316,6 +337,13 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
   };
 
   const completeSpeaker = async (entryId: string) => {
+    const speakingEntry = queue.find(entry => entry.id === entryId);
+    let timeUsed = 0;
+    
+    if (speakingEntry?.time_allocated) {
+      timeUsed = speakingEntry.time_allocated - timeRemaining;
+    }
+
     const { error } = await supabase
       .from('speaking_queue')
       .update({
@@ -331,6 +359,28 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
         variant: "destructive",
       });
     } else {
+      // Actualizar participación en agenda con tiempo real usado
+      const { data: activeAgenda } = await supabase
+        .from('agenda_items')
+        .select('id')
+        .eq('committee_id', committeeId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (activeAgenda && speakingEntry) {
+        await supabase
+          .from('agenda_participations')
+          .update({
+            time_used: Math.max(0, timeUsed),
+            ended_at: new Date().toISOString()
+          })
+          .match({
+            agenda_item_id: activeAgenda.id,
+            delegate_id: speakingEntry.delegate_id,
+            ended_at: null
+          });
+      }
+
       // Detener el temporizador principal para reflejarse en todas las vistas
       await supabase
         .from('committees')

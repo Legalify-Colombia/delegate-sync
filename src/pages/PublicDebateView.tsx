@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Gavel, FileText, Users as UsersIcon, Clock, Mic } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
+import { Logo } from '@/components/ui/logo';
+import PublicAgendaDisplay from '@/components/agenda/PublicAgendaDisplay';
 
 interface Committee {
   id: string;
@@ -775,7 +777,12 @@ export default function PublicDebateView() {
           </div>
         </div>
 
-        {/* Panel central - Representación de delegados */}
+          {/* Agenda Display */}
+          <div className="mb-6">
+            <PublicAgendaDisplay committeeId={committeeId} />
+          </div>
+
+          {/* Speaking Queue */}
         <div className="flex-1 flex flex-col justify-center items-center">
           {isVotingActive && (
             <div className="mb-8 bg-primary/10 rounded-2xl p-6 text-center">
