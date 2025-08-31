@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gavel, FileText, Users as UsersIcon, Clock, Mic } from 'lucide-react';
+import { Gavel, FileText, Users as UsersIcon, Clock, Mic, Calendar, Timer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 import { Logo } from '@/components/ui/logo';
@@ -64,8 +64,8 @@ interface SpeakingQueue {
   };
 }
 
-// Componente de Temporizadores
-const TimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; speakerTimeLeft: number }) => {
+// Componente de Temporizadores Compacto
+const CompactTimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; speakerTimeLeft: number }) => {
   const formatTime = (seconds: number) => {
     const isNegative = seconds < 0;
     const absSeconds = Math.abs(seconds);
@@ -88,19 +88,94 @@ const TimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; s
   };
 
   return (
-    <div className="flex divide-x divide-border">
-      <div className="px-6 text-center">
-        <p className="text-sm font-medium text-muted-foreground">Tiempo de Sesión</p>
-        <p className="text-4xl font-bold tracking-tighter text-foreground">{formatTime(sessionTime)}</p>
+    <div className="flex flex-col gap-3 bg-card/40 backdrop-blur-sm p-4 rounded-xl border border-border/50">
+      {/* Tiempo de Sesión */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Clock className="h-4 w-4 text-blue-500" />
+          <span className="text-xs font-medium text-muted-foreground uppercase">Sesión</span>
+        </div>
+        <div className="text-2xl font-bold text-blue-500">{formatTime(sessionTime)}</div>
       </div>
-      <div className="px-6 text-center">
-        <p className="text-sm font-medium text-muted-foreground">Tiempo de Intervención</p>
-        <p className={`text-4xl font-bold tracking-tighter transition-colors ${getSpeakerTimeColor()}`}>
+      
+      {/* Separador */}
+      <div className="h-px bg-border/50" />
+      
+      {/* Tiempo de Intervención */}
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Timer className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground uppercase">Orador</span>
+        </div>
+        <div className={`text-2xl font-bold transition-colors ${getSpeakerTimeColor()}`}>
           {formatTime(speakerTimeLeft)}
-        </p>
+        </div>
         {speakerTimeLeft < 0 && (
-          <p className="text-xs text-destructive font-medium mt-1">TIEMPO EXCEDIDO</p>
+          <div className="text-xs text-destructive font-medium mt-1">EXCEDIDO</div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// Componente de Cola Compacta
+const CompactSpeakingQueue = ({ queue }: { queue: SpeakingQueue[] }) => {
+  return (
+    <div className="bg-card/40 backdrop-blur-sm p-4 rounded-xl border border-border/50">
+      <div className="flex items-center gap-2 mb-3">
+        <UsersIcon className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Cola de Oradores</h3>
+        <div className="ml-auto bg-primary/20 text-primary px-2 py-1 rounded-full text-xs font-medium">
+          {queue.length}
+        </div>
+      </div>
+      
+      <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+        {queue.slice(0, 8).map((speaker, index) => (
+          <motion.div
+            key={speaker.delegate_id}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="flex items-center gap-2 bg-background/60 p-2 rounded-lg"
+          >
+            <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              {index + 1}
+            </div>
+            <img 
+              src={speaker.profiles.photo_url || `https://placehold.co/24x24/E5E7EB/1F2937?text=${speaker.profiles.country_name.slice(0, 2)}`}
+              alt={speaker.profiles.full_name}
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{speaker.profiles.country_name}</p>
+              <p className="text-xs text-muted-foreground truncate">{speaker.profiles.full_name}</p>
+            </div>
+          </motion.div>
+        ))}
+        {queue.length === 0 && (
+          <p className="text-center text-muted-foreground text-xs py-4">No hay oradores en cola</p>
+        )}
+        {queue.length > 8 && (
+          <div className="text-center text-xs text-muted-foreground py-1">
+            +{queue.length - 8} más...
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Componente de Agenda Compacta
+const CompactAgendaDisplay = ({ committeeId }: { committeeId: string }) => {
+  return (
+    <div className="bg-card/40 backdrop-blur-sm p-4 rounded-xl border border-border/50">
+      <div className="flex items-center gap-2 mb-3">
+        <Calendar className="h-4 w-4 text-orange-500" />
+        <h3 className="text-sm font-semibold">Agenda</h3>
+      </div>
+      <div className="max-h-48 overflow-y-auto custom-scrollbar">
+        <PublicAgendaDisplay committeeId={committeeId} />
       </div>
     </div>
   );
@@ -126,19 +201,19 @@ const CurrentSpeakerHeader = ({
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -50 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-        className="flex items-center gap-4 bg-blue-500/10 border border-blue-500/20 p-4 rounded-2xl min-w-[400px]"
+        className="flex items-center gap-4 bg-blue-500/10 border border-blue-500/20 p-4 rounded-2xl min-w-[300px] lg:min-w-[400px]"
       >
-        <div className="w-20 h-20 rounded-full ring-4 ring-blue-500 bg-blue-500/20 flex items-center justify-center">
-          <Mic className="h-8 w-8 text-blue-500" />
+        <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full ring-4 ring-blue-500 bg-blue-500/20 flex items-center justify-center">
+          <Mic className="h-6 w-6 lg:h-8 lg:w-8 text-blue-500" />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>
             <span className="text-xs font-medium text-blue-500 uppercase tracking-wide">SECRETARIO HABLANDO</span>
           </div>
-          <p className="text-2xl font-bold text-foreground mb-1">Secretario de Comité</p>
-          <p className="text-lg text-muted-foreground font-medium">{secretary.profiles.full_name}</p>
-          <p className="text-sm text-muted-foreground">Moderando la sesión</p>
+          <p className="text-lg lg:text-2xl font-bold text-foreground mb-1">Secretario de Comité</p>
+          <p className="text-sm lg:text-lg text-muted-foreground font-medium">{secretary.profiles.full_name}</p>
+          <p className="text-xs lg:text-sm text-muted-foreground">Moderando la sesión</p>
           {secretary.started_at && (
             <p className="text-xs text-muted-foreground mt-1">
               Desde: {new Date(secretary.started_at).toLocaleTimeString()}
@@ -150,7 +225,7 @@ const CurrentSpeakerHeader = ({
   }
 
   if (!speaker) return (
-    <div className="min-w-[400px] h-[116px] bg-background/20 rounded-2xl flex items-center justify-center">
+    <div className="min-w-[300px] lg:min-w-[400px] h-[100px] lg:h-[116px] bg-background/20 rounded-2xl flex items-center justify-center">
       <p className="text-muted-foreground">No hay orador activo</p>
     </div>
   );
@@ -162,12 +237,12 @@ const CurrentSpeakerHeader = ({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      className="flex items-center gap-4 bg-success/10 border border-success/20 p-4 rounded-2xl min-w-[400px]"
+      className="flex items-center gap-4 bg-success/10 border border-success/20 p-4 rounded-2xl min-w-[300px] lg:min-w-[400px]"
     >
       <img 
         src={speaker.profiles.photo_url || `https://placehold.co/128x128/10B981/FFFFFF?text=${speaker.profiles.country_name.slice(0, 3).toUpperCase()}`} 
         alt={speaker.profiles.full_name} 
-        className="w-20 h-20 rounded-full ring-4 ring-success object-cover" 
+        className="w-16 h-16 lg:w-20 lg:h-20 rounded-full ring-4 ring-success object-cover" 
       />
       <div className="flex-1">
         <AnimatePresence>
@@ -181,9 +256,9 @@ const CurrentSpeakerHeader = ({
           <div className="w-3 h-3 rounded-full bg-success animate-pulse"></div>
           <span className="text-xs font-medium text-success uppercase tracking-wide">EN VIVO</span>
         </div>
-        <p className="text-2xl font-bold text-foreground mb-1">{speaker.profiles.country_name}</p>
-        <p className="text-lg text-muted-foreground font-medium">{speaker.profiles.full_name}</p>
-        <p className="text-sm text-muted-foreground">{speaker.profiles['Entidad que representa']}</p>
+        <p className="text-lg lg:text-2xl font-bold text-foreground mb-1">{speaker.profiles.country_name}</p>
+        <p className="text-sm lg:text-lg text-muted-foreground font-medium">{speaker.profiles.full_name}</p>
+        <p className="text-xs lg:text-sm text-muted-foreground">{speaker.profiles['Entidad que representa']}</p>
       </div>
     </motion.div>
   );
@@ -707,6 +782,15 @@ export default function PublicDebateView() {
     return 'bg-muted-foreground';
   };
 
+  const getStatusMessage = () => {
+    switch (committee?.current_status) {
+      case 'active': return { text: 'DEBATE ACTIVO', color: 'text-success' };
+      case 'paused': return { text: 'DEBATE EN PAUSA', color: 'text-warning' };
+      case 'voting': return { text: 'VOTACIÓN EN CURSO', color: 'text-primary' };
+      default: return { text: 'COMITÉ INACTIVO', color: 'text-muted-foreground' };
+    }
+  };
+
   if (!committee) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -720,157 +804,223 @@ export default function PublicDebateView() {
   const otherMembersCount = otherMembers.length;
   const circleSize = Math.max(40, 110 - otherMembersCount * 5);
 
-  const getStatusMessage = () => {
-    switch (committee?.current_status) {
-      case 'active': return { text: 'DEBATE ACTIVO', color: 'text-success' };
-      case 'paused': return { text: 'DEBATE EN PAUSA', color: 'text-warning' };
-      case 'voting': return { text: 'VOTACIÓN EN CURSO', color: 'text-primary' };
-      default: return { text: 'COMITÉ INACTIVO', color: 'text-muted-foreground' };
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col p-6 md:p-10 font-sans overflow-hidden">
-      <header className="w-full mb-4 flex justify-between items-center">
-        <div className="text-left">
-          <h1 className="text-4xl font-bold tracking-tight">{committee.name}</h1>
-          <p className="text-lg text-muted-foreground">{committee.topic}</p>
-          <div className={`text-sm font-bold mt-2 ${getStatusMessage().color}`}>
-            {getStatusMessage().text}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 text-foreground flex flex-col font-sans overflow-hidden">
+      {/* Header mejorado con logo */}
+      <header className="w-full p-4 bg-card/20 backdrop-blur-sm border-b border-border/50">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          {/* Logo y título */}
+          <div className="flex items-center gap-6">
+            <Logo size="lg" className="flex-shrink-0" />
+            <div className="text-left">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{committee?.name}</h1>
+              <p className="text-sm md:text-base text-muted-foreground">{committee?.topic}</p>
+              <div className={`text-xs font-bold mt-1 ${getStatusMessage().color} flex items-center gap-1`}>
+                <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                {getStatusMessage().text}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <CurrentSpeakerHeader 
-              key={currentSpeaker ? currentSpeaker.delegate_id : 'no-speaker'} 
-              speaker={currentSpeaker}
-              secretary={secretarySpeaking}
-            />
-          </AnimatePresence>
+          
+          {/* Orador actual - Solo desktop */}
+          <div className="hidden lg:block">
+            <AnimatePresence mode="wait">
+              <CurrentSpeakerHeader 
+                key={currentSpeaker ? currentSpeaker.delegate_id : 'no-speaker'} 
+                speaker={currentSpeaker}
+                secretary={secretarySpeaking}
+              />
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
-      <main className="flex-grow bg-card/20 rounded-2xl p-6 flex">
-        {/* Panel izquierdo - Cola de oradores */}
-        <div className="w-80 pr-6">
-          <h3 className="text-xl font-bold mb-4 text-center">Cola de Oradores</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {speakingQueue.map((speaker, index) => (
-              <motion.div
-                key={speaker.delegate_id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-center gap-3 bg-background/50 p-3 rounded-lg"
-              >
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                  {index + 1}
-                </div>
-                <img 
-                  src={speaker.profiles.photo_url || `https://placehold.co/40x40/E5E7EB/1F2937?text=${speaker.profiles.country_name.slice(0, 2)}`}
-                  alt={speaker.profiles.full_name}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">{speaker.profiles.country_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{speaker.profiles.full_name}</p>
-                </div>
-              </motion.div>
-            ))}
-            {speakingQueue.length === 0 && (
-              <p className="text-center text-muted-foreground">No hay oradores en cola</p>
-            )}
-          </div>
-        </div>
+      {/* Orador actual móvil */}
+      <div className="lg:hidden px-4 py-3 bg-card/10 backdrop-blur-sm">
+        <AnimatePresence mode="wait">
+          <CurrentSpeakerHeader 
+            key={currentSpeaker ? currentSpeaker.delegate_id : 'no-speaker'} 
+            speaker={currentSpeaker}
+            secretary={secretarySpeaking}
+          />
+        </AnimatePresence>
+      </div>
 
-          {/* Agenda Display */}
-          <div className="mb-6">
-            <PublicAgendaDisplay committeeId={committeeId} />
-          </div>
-
-          {/* Speaking Queue */}
-        <div className="flex-1 flex flex-col justify-center items-center">
-          {isVotingActive && (
-            <div className="mb-8 bg-primary/10 rounded-2xl p-6 text-center">
-              <h3 className="text-2xl font-bold text-primary mb-4">VOTACIÓN EN CURSO</h3>
-              <div className="flex justify-center gap-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-success">{voteCount.for}</div>
-                  <div className="text-sm text-muted-foreground">A Favor</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-destructive">{voteCount.against}</div>
-                  <div className="text-sm text-muted-foreground">En Contra</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-muted-foreground">{voteCount.abstain}</div>
-                  <div className="text-sm text-muted-foreground">Abstención</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-center gap-8 mb-8">
-            {permanentMembers.map(delegate => (
-              <motion.div 
-                key={delegate.id} 
-                initial={{ opacity: 0, y: -20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: 0.1 * delegates.indexOf(delegate) }} 
-                className="flex flex-col items-center justify-center"
-              >
-                <div 
-                  style={{ width: '64px', height: '64px' }}
-                  className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ring-offset-4 ring-offset-background ${
-                    currentSpeaker?.delegate_id === delegate.id 
-                      ? 'ring-4 ring-success' 
-                      : 'ring-2 ring-warning'
-                  }`} 
-                />
-                <span className="text-sm font-semibold text-muted-foreground mt-2 text-center w-24">
-                  {delegate.country_name}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-          
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-4">
-            {otherMembers.map(delegate => (
-              <motion.div 
-                key={delegate.id} 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: 0.05 * delegates.indexOf(delegate) }} 
-                className="flex flex-col items-center justify-center"
-              >
-                <div 
-                  style={{ width: `${circleSize}px`, height: `${circleSize}px` }}
-                  className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
-                    currentSpeaker?.delegate_id === delegate.id 
-                      ? 'ring-4 ring-offset-4 ring-offset-background ring-success' 
-                      : ''
-                  }`}
-                />
-                <span 
-                  style={{width: `${circleSize}px`}} 
-                  className="text-xs text-muted-foreground mt-2 text-center truncate"
-                >
-                  {delegate.country_name}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      <footer className="w-full mt-6 flex justify-center">
-        <div className="bg-card/20 p-4 rounded-2xl">
-          <TimerDisplay 
+      {/* Layout principal reorganizado */}
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 flex gap-4">
+        {/* Panel lateral izquierdo - Información (solo desktop) */}
+        <div className="w-72 space-y-4 hidden xl:block">
+          <CompactTimerDisplay 
             sessionTime={sessionTime} 
             speakerTimeLeft={speakerTimeLeft}
           />
+          <CompactSpeakingQueue queue={speakingQueue} />
+          <CompactAgendaDisplay committeeId={committeeId || ''} />
         </div>
-      </footer>
+
+        {/* Área central - Representación visual de delegados */}
+        <div className="flex-1 flex flex-col justify-center items-center relative">
+          {/* Panel móvil - Información compacta (tablet/mobile) */}
+          <div className="xl:hidden w-full mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CompactTimerDisplay 
+                sessionTime={sessionTime} 
+                speakerTimeLeft={speakerTimeLeft}
+              />
+              <CompactSpeakingQueue queue={speakingQueue} />
+              <CompactAgendaDisplay committeeId={committeeId || ''} />
+            </div>
+          </div>
+
+          {/* Votación activa */}
+          {isVotingActive && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-8 bg-gradient-to-r from-primary/20 to-primary/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-primary/20"
+            >
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Gavel className="h-6 w-6 text-primary animate-pulse" />
+                <h3 className="text-2xl font-bold text-primary">VOTACIÓN EN CURSO</h3>
+              </div>
+              <div className="flex justify-center gap-8">
+                <motion.div 
+                  className="text-center"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className="text-3xl font-bold text-success">{voteCount.for}</div>
+                  <div className="text-sm text-muted-foreground">A Favor</div>
+                </motion.div>
+                <motion.div 
+                  className="text-center"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className="text-3xl font-bold text-destructive">{voteCount.against}</div>
+                  <div className="text-sm text-muted-foreground">En Contra</div>
+                </motion.div>
+                <motion.div 
+                  className="text-center"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className="text-3xl font-bold text-muted-foreground">{voteCount.abstain}</div>
+                  <div className="text-sm text-muted-foreground">Abstención</div>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Miembros permanentes del Consejo de Seguridad */}
+          {permanentMembers.length > 0 && (
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Miembros Permanentes
+                </h3>
+              </div>
+              <div className="flex justify-center gap-8">
+                {permanentMembers.map((delegate, index) => (
+                  <motion.div 
+                    key={delegate.id} 
+                    initial={{ opacity: 0, y: -20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.1 * index }}
+                    whileHover={{ scale: 1.05 }}
+                    className="flex flex-col items-center group cursor-pointer"
+                  >
+                    <div className="relative">
+                      <div 
+                        className={`w-16 h-16 rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
+                          currentSpeaker?.delegate_id === delegate.id 
+                            ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
+                            : 'ring-2 ring-warning group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background'
+                        }`} 
+                      />
+                      {currentSpeaker?.delegate_id === delegate.id && (
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                          <Mic className="h-3 w-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold text-center w-20 mt-2 group-hover:text-primary transition-colors">
+                      {delegate.country_name}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Otros miembros */}
+          {otherMembers.length > 0 && (
+            <div className="w-full">
+              <div className="text-center mb-4">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  Miembros No Permanentes ({otherMembers.length})
+                </h3>
+              </div>
+              <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+                {otherMembers.map((delegate, index) => (
+                  <motion.div 
+                    key={delegate.id} 
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: 0.05 * index }}
+                    whileHover={{ scale: 1.05 }}
+                    className="flex flex-col items-center group cursor-pointer"
+                  >
+                    <div className="relative">
+                      <div 
+                        style={{ width: `${circleSize}px`, height: `${circleSize}px` }}
+                        className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
+                          currentSpeaker?.delegate_id === delegate.id 
+                            ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
+                            : 'group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background'
+                        }`}
+                      />
+                      {currentSpeaker?.delegate_id === delegate.id && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                          <Mic className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <span 
+                      style={{width: `${Math.max(circleSize, 80)}px`}} 
+                      className="text-xs text-center mt-2 truncate group-hover:text-primary transition-colors"
+                      title={delegate.country_name}
+                    >
+                      {delegate.country_name}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Estilos CSS para el scroll personalizado */}
+      <style jsx global>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgb(203 213 225) transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgb(203 213 225);
+          border-radius: 2px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgb(148 163 184);
+        }
+      `}</style>
     </div>
   );
-}
