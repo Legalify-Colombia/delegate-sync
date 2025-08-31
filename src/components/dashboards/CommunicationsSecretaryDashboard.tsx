@@ -22,6 +22,7 @@ interface Announcement {
   title: string;
   content: string;
   created_at: string;
+  author?: { full_name: string };
 }
 interface NewsPublication {
     id: string;
@@ -127,8 +128,11 @@ export default function CommunicationsSecretaryDashboard() {
     }, []);
 
     const fetchAnnouncements = async () => {
-        const { data, error } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
-        if (!error) setAnnouncements(data || []);
+        const { data, error } = await supabase
+            .from('announcements')
+            .select('*, author:profiles(full_name)')
+            .order('created_at', { ascending: false });
+        if (!error) setAnnouncements(data as any || []);
     };
     
     const fetchNews = async () => {
@@ -219,7 +223,14 @@ export default function CommunicationsSecretaryDashboard() {
                                         <div key={announcement.id} className="p-4 border-l-4 border-blue-500 bg-blue-50/50 rounded-r-lg">
                                             <h4 className="font-semibold text-gray-800">{announcement.title}</h4>
                                             <p className="text-sm text-gray-600 mt-1">{announcement.content}</p>
-                                            <p className="text-xs text-gray-400 mt-2">{new Date(announcement.created_at).toLocaleString('es-ES')}</p>
+                                            <div className="flex justify-between items-center mt-2">
+                                                <p className="text-xs text-gray-500">
+                                                    Por: {announcement.author?.full_name || 'Usuario desconocido'}
+                                                </p>
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(announcement.created_at).toLocaleString('es-ES')}
+                                                </p>
+                                            </div>
                                         </div>
                                     ))
                                 ) : (<p className="text-gray-500 text-center py-8">No hay anuncios publicados.</p>)}
