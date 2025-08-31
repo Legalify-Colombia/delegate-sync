@@ -22,6 +22,7 @@ interface Announcement {
   title: string; 
   content: string; 
   created_at: string; 
+  author?: { full_name: string };
 }
 
 // --- Componente para animar números ---
@@ -59,14 +60,14 @@ export default function StaffDashboard() {
             try {
                 const [committeesResponse, announcementsResponse] = await Promise.all([
                     supabase.from('committees').select('*').order('name'),
-                    supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(5)
+                    supabase.from('announcements').select('*, author:profiles(full_name)').order('created_at', { ascending: false }).limit(5)
                 ]);
                 
                 if (committeesResponse.error) throw committeesResponse.error;
                 if (announcementsResponse.error) throw announcementsResponse.error;
                 
                 setCommittees(committeesResponse.data || []);
-                setAnnouncements(announcementsResponse.data || []);
+                setAnnouncements(announcementsResponse.data as any || []);
             } catch (err: any) {
                 console.error("Error fetching data:", err);
                 setError('Failed to load dashboard data.');
@@ -209,12 +210,15 @@ const ActivityView = ({ chartData, committees }: { chartData: any[]; committees:
 
 const AnnouncementList = ({ announcements }: { announcements: Announcement[] }) => ( 
   <div className="space-y-4"> 
-    <h3 className="text-xl font-bold text-slate-800 mb-4">Noticias y Anuncios Recientes</h3> 
+    <h3 className="text-xl font-bold text-slate-800 mb-4">Anuncios Recientes</h3> 
     {announcements.length > 0 ? announcements.map(a => ( 
       <motion.div key={a.id} className="border-b border-slate-200 pb-3 last:border-b-0" whileHover={{ x: 5 }}>
         <p className="font-semibold text-slate-800">{a.title}</p> 
         <p className="text-sm text-slate-600 my-1">{a.content}</p> 
-        <p className="text-xs text-slate-400">{new Date(a.created_at).toLocaleString()}</p> 
+        <div className="flex justify-between items-center">
+          <p className="text-xs text-slate-500">Por: {a.author?.full_name || 'Usuario desconocido'}</p>
+          <p className="text-xs text-slate-400">{new Date(a.created_at).toLocaleString('es-ES')}</p> 
+        </div>
       </motion.div> 
     )) : <p className="text-slate-500 text-center py-4">No hay anuncios recientes.</p>} 
   </div> 
