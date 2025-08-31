@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users, Timer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +27,94 @@ interface SpeakingQueueProps {
   isSecretary?: boolean;
 }
 
+interface TimeModalProps {
+  isOpen: boolean;
+  speaker: QueueEntry | null;
+  onClose: () => void;
+  onAssign: (entryId: string, timeInSeconds: number) => void;
+}
+
+const TimeAssignmentModal = ({ isOpen, speaker, onClose, onAssign }: TimeModalProps) => {
+  const [minutes, setMinutes] = useState(2);
+  const [seconds, setSeconds] = useState(0);
+
+  const handleAssign = () => {
+    if (speaker) {
+      const totalSeconds = minutes * 60 + seconds;
+      onAssign(speaker.id, totalSeconds);
+      onClose();
+    }
+  };
+
+  if (!isOpen || !speaker) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.95, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.95, y: 20 }}
+          className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+            Asignar Tiempo de Intervención
+          </h3>
+          <div className="text-center mb-6">
+            <p className="text-blue-600 font-bold text-xl">{speaker.profiles.full_name}</p>
+            {speaker.profiles.countries && (
+              <p className="text-sm text-gray-500">{speaker.profiles.countries.name}</p>
+            )}
+          </div>
+          
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="text-center">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Minutos</label>
+              <Input
+                type="number"
+                value={minutes}
+                onChange={(e) => setMinutes(Math.max(0, parseInt(e.target.value) || 0))}
+                min="0"
+                max="59"
+                className="w-20 text-center"
+              />
+            </div>
+            <div className="text-2xl font-bold text-gray-400 mt-6">:</div>
+            <div className="text-center">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Segundos</label>
+              <Input
+                type="number"
+                value={seconds}
+                onChange={(e) => setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                min="0"
+                max="59"
+                className="w-20 text-center"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={handleAssign} className="flex-1">
+              <Timer className="w-4 h-4 mr-2" />
+              Asignar Tiempo
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 export default function SpeakingQueue({ committeeId, isSecretary = false }: SpeakingQueueProps) {
   const { profile } = useAuth();
   const [queue, setQueue] = useState<QueueEntry[]>([]);
@@ -32,6 +122,8 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
   const [currentSpeaker, setCurrentSpeaker] = useState<QueueEntry | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
+  const [selectedSpeaker, setSelectedSpeaker] = useState<QueueEntry | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -366,7 +458,7 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
                       variant="outline"
                     >
                       <Play className="h-4 w-4 mr-2" />
-                      Dar Voz (2 min)
+                      2 min
                     </Button>
                     <Button
                       onClick={() => startSpeaker(entry.id, 60)}
@@ -375,6 +467,17 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
                     >
                       <Clock className="h-4 w-4 mr-2" />
                       1 min
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSelectedSpeaker(entry);
+                        setShowTimeModal(true);
+                      }}
+                      size="sm"
+                      variant="default"
+                    >
+                      <Timer className="h-4 w-4 mr-2" />
+                      Personalizar
                     </Button>
                   </div>
                 )}
@@ -387,6 +490,20 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
           </p>
         )}
       </CardContent>
+      
+      <TimeAssignmentModal
+        isOpen={showTimeModal}
+        speaker={selectedSpeaker}
+        onClose={() => {
+          setShowTimeModal(false);
+          setSelectedSpeaker(null);
+        }}
+        onAssign={(entryId, timeInSeconds) => {
+          startSpeaker(entryId, timeInSeconds);
+          setShowTimeModal(false);
+          setSelectedSpeaker(null);
+        }}
+      />
     </Card>
   );
 }

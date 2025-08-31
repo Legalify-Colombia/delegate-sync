@@ -205,7 +205,7 @@ export default function CommitteeSecretaryDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <SpeakingQueue committeeId={committee.id} />
+                <SpeakingQueue committeeId={committee.id} isSecretary={true} />
               </CardContent>
             </Card>
           </motion.div>
