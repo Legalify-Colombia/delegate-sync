@@ -117,7 +117,7 @@ export default function NewsPage() {
     if (!error) {
       const fetchedNews = (data as any) || [];
       setNews(fetchedNews);
-      const uniqueCategories = ['Todas', ...Array.from(new Set(fetchedNews.map(n => n.committees?.name).filter(Boolean)))];
+      const uniqueCategories: string[] = ['Todas', ...Array.from(new Set(fetchedNews.map((n: any) => n.committees?.name).filter(Boolean))) as string[]];
       setCategories(uniqueCategories);
     }
     setLoading(false);
@@ -145,11 +145,8 @@ export default function NewsPage() {
                 <a href="/" className="text-xl font-bold text-gray-900">The Resolution Hub</a>
               </div>
               <div className="flex items-center space-x-2">
-                {user?.avatar_url && (
-                  <img src={user.avatar_url} alt="Avatar" className="h-6 w-6 rounded-full" />
-                )}
                 <User className="h-4 w-4" />
-                <span>{user?.full_name ?? 'Desconocido'}</span>
+                <span>{(user as any)?.email ?? 'Desconocido'}</span>
                 <a href="/news" className="text-blue-600 font-semibold">Noticias</a>
                 <a href="#" className="hover:text-blue-600 transition-colors">Precios</a>
               </div>
@@ -158,16 +155,16 @@ export default function NewsPage() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatar_url || ''} alt={user.full_name || 'Usuario'} />
-                        <AvatarFallback>{user.full_name ? user.full_name.charAt(0) : 'U'}</AvatarFallback>
+                        <AvatarImage src="" alt="Usuario" />
+                        <AvatarFallback>{(user as any)?.email ? (user as any).email.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.full_name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.role}</p>
+                        <p className="text-sm font-medium leading-none">{(user as any)?.email || 'Usuario'}</p>
+                        <p className="text-xs leading-none text-muted-foreground">Usuario</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
