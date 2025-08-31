@@ -31,7 +31,6 @@ const Index = () => {
                             <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-gray-600">
                                 <a href="#features" className="hover:text-blue-600 transition-colors">Características</a>
                                 <a href="#how-it-works" className="hover:text-blue-600 transition-colors">¿Cómo funciona?</a>
-                                <a href="#" className="hover:text-blue-600 transition-colors">Precios</a>
                                 <a href="news" className="hover:text-blue-600 transition-colors">Noticias</a>
                             </nav>
                             
