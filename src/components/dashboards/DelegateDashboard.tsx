@@ -3,10 +3,17 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Vote, FileText, Star, Newspaper } from 'lucide-react';
+import { Clock, Vote, FileText, Star, Newspaper, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/ui/logo';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
 import SpeakingQueue from '@/components/realtime/SpeakingQueue';
@@ -26,7 +33,7 @@ interface Rating {
 }
 
 export default function DelegateDashboard() {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const [committee, setCommittee] = useState<Committee | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +135,7 @@ export default function DelegateDashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-4">
-                <h1 className="text-xl font-bold text-foreground">Panel del Delegado</h1>
+                <Logo size="md" />
               </div>
               <div className="flex items-center space-x-2">
                 <Link to="/news">
@@ -137,6 +144,21 @@ export default function DelegateDashboard() {
                     <span className="hidden sm:inline">Noticias</span>
                   </Button>
                 </Link>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                      <User className="h-4 w-4" />
+                      <span className="hidden sm:inline">Mi Cuenta</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={signOut} className="text-destructive">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar Sesión
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
@@ -168,7 +190,7 @@ export default function DelegateDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-bold text-foreground">Panel del Delegado</h1>
+                <Logo size="md" />
                 {countryInfo && (
                   <div className="flex items-center space-x-2 bg-muted/50 px-3 py-1 rounded-full">
                     {countryInfo.flag ? (
@@ -196,6 +218,21 @@ export default function DelegateDashboard() {
                   <span className="hidden sm:inline">Noticias</span>
                 </Button>
               </Link>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">Mi Cuenta</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={signOut} className="text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Cerrar Sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
