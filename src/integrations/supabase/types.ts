@@ -38,13 +38,58 @@ export type Database = {
         }
         Relationships: []
       }
+      asistencia: {
+        Row: {
+          committee_id: string
+          fecha: string
+          id: string
+          presente: boolean
+          profile_id: string
+          seccion: string | null
+        }
+        Insert: {
+          committee_id: string
+          fecha?: string
+          id?: string
+          presente?: boolean
+          profile_id: string
+          seccion?: string | null
+        }
+        Update: {
+          committee_id?: string
+          fecha?: string
+          id?: string
+          presente?: boolean
+          profile_id?: string
+          seccion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_asistencia_committee"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_asistencia_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       committees: {
         Row: {
           created_at: string | null
           current_status: Database["public"]["Enums"]["committee_status"] | null
           current_timer_end: string | null
+          current_timer_remaining_seconds: number | null
           id: string
           name: string
+          session_accumulated_seconds: number
+          session_started_at: string | null
           topic: string
           updated_at: string | null
         }
@@ -54,8 +99,11 @@ export type Database = {
             | Database["public"]["Enums"]["committee_status"]
             | null
           current_timer_end?: string | null
+          current_timer_remaining_seconds?: number | null
           id?: string
           name: string
+          session_accumulated_seconds?: number
+          session_started_at?: string | null
           topic: string
           updated_at?: string | null
         }
@@ -65,8 +113,11 @@ export type Database = {
             | Database["public"]["Enums"]["committee_status"]
             | null
           current_timer_end?: string | null
+          current_timer_remaining_seconds?: number | null
           id?: string
           name?: string
+          session_accumulated_seconds?: number
+          session_started_at?: string | null
           topic?: string
           updated_at?: string | null
         }
@@ -234,15 +285,32 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_committee"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_publications_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           committee_id: string | null
           country_id: string | null
           created_at: string | null
+          "Entidad que representa": string | null
           full_name: string
           id: string
+          Photo_url: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string | null
         }
@@ -250,8 +318,10 @@ export type Database = {
           committee_id?: string | null
           country_id?: string | null
           created_at?: string | null
+          "Entidad que representa"?: string | null
           full_name: string
           id: string
+          Photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
         }
@@ -259,8 +329,10 @@ export type Database = {
           committee_id?: string | null
           country_id?: string | null
           created_at?: string | null
+          "Entidad que representa"?: string | null
           full_name?: string
           id?: string
+          Photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
         }
@@ -308,6 +380,51 @@ export type Database = {
         }
         Relationships: []
       }
+      requests: {
+        Row: {
+          committee_id: string
+          created_at: string | null
+          delegate_id: string
+          id: string
+          profiles: Json | null
+          status: string
+          type: string
+        }
+        Insert: {
+          committee_id: string
+          created_at?: string | null
+          delegate_id: string
+          id?: string
+          profiles?: Json | null
+          status?: string
+          type: string
+        }
+        Update: {
+          committee_id?: string
+          created_at?: string | null
+          delegate_id?: string
+          id?: string
+          profiles?: Json | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requests_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requests_delegate_id_fkey"
+            columns: ["delegate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       speaking_queue: {
         Row: {
           committee_id: string
@@ -319,6 +436,7 @@ export type Database = {
           started_at: string | null
           status: string
           time_allocated: number | null
+          type: string | null
         }
         Insert: {
           committee_id: string
@@ -330,6 +448,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           time_allocated?: number | null
+          type?: string | null
         }
         Update: {
           committee_id?: string
@@ -341,8 +460,24 @@ export type Database = {
           started_at?: string | null
           status?: string
           time_allocated?: number | null
+          type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_committee"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_delegate_profile"
+            columns: ["delegate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_requests: {
         Row: {
@@ -357,6 +492,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           assigned_to?: string | null
@@ -370,6 +506,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           assigned_to?: string | null
@@ -383,8 +520,17 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_staff_requests_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       votes: {
         Row: {
