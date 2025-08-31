@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gavel } from 'lucide-react';
+import { Gavel, FileText, Users as UsersIcon, Clock, Mic } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 
@@ -13,6 +13,25 @@ interface Committee {
   session_started_at?: string;
   session_accumulated_seconds: number;
   current_timer_remaining_seconds?: number;
+}
+
+interface AgendaItem {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'pending' | 'active' | 'completed';
+  is_active: boolean;
+  position: number;
+}
+
+interface SecretarySpeaking {
+  id: string;
+  secretary_id: string;
+  is_active: boolean;
+  started_at?: string;
+  profiles: {
+    full_name: string;
+  };
 }
 
 interface Delegate {
@@ -85,8 +104,43 @@ const TimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; s
   );
 };
 
-// Componente para mostrar al orador actual
-const CurrentSpeakerHeader = ({ speaker, isMotion }: { speaker: SpeakingQueue | null; isMotion?: boolean }) => {
+// Componente para mostrar al orador actual (delegado o secretario)
+const CurrentSpeakerHeader = ({ 
+  speaker, 
+  secretary, 
+  isMotion 
+}: { 
+  speaker: SpeakingQueue | null; 
+  secretary: SecretarySpeaking | null;
+  isMotion?: boolean;
+}) => {
+  // Priorizar secretario si está hablando
+  if (secretary?.is_active) {
+    return (
+      <motion.div
+        key={secretary.secretary_id}
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+        className="flex items-center gap-4 bg-primary/10 border border-primary/20 p-4 rounded-2xl min-w-[400px]"
+      >
+        <div className="w-20 h-20 rounded-full ring-4 ring-primary bg-primary/20 flex items-center justify-center">
+          <Mic className="h-8 w-8 text-primary" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+            <span className="text-xs font-medium text-primary uppercase tracking-wide">SECRETARIO HABLANDO</span>
+          </div>
+          <p className="text-2xl font-bold text-foreground mb-1">Secretario de Comité</p>
+          <p className="text-lg text-muted-foreground font-medium">{secretary.profiles.full_name}</p>
+          <p className="text-sm text-muted-foreground">Moderando la sesión</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   if (!speaker) return (
     <div className="min-w-[400px] h-[116px] bg-background/20 rounded-2xl flex items-center justify-center">
       <p className="text-muted-foreground">No hay orador activo</p>
@@ -133,6 +187,8 @@ export default function PublicDebateView() {
   const [delegates, setDelegates] = useState<Delegate[]>([]);
   const [votes, setVotes] = useState<{ [key: string]: string }>({});
   const [currentSpeaker, setCurrentSpeaker] = useState<SpeakingQueue | null>(null);
+  const [secretarySpeaking, setSecretarySpeaking] = useState<SecretarySpeaking | null>(null);
+  const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
   const [speakingQueue, setSpeakingQueue] = useState<SpeakingQueue[]>([]);
   const [sessionTime, setSessionTime] = useState(0);
   const [speakerTimeLeft, setSpeakerTimeLeft] = useState(0);
@@ -284,7 +340,44 @@ export default function PublicDebateView() {
         setSpeakingQueue(queueWithProfiles);
       }
 
-      // Verificar votación según estado del comité
+      // Cargar agenda items
+      const { data: agendaData } = await supabase
+        .from('agenda_items')
+        .select('*')
+        .eq('committee_id', committeeId)
+        .order('position');
+
+      if (agendaData) {
+        setAgendaItems(agendaData as AgendaItem[]);
+      }
+
+      // Cargar estado del secretario hablando
+      const { data: secretaryData } = await supabase
+        .from('secretary_speaking')
+        .select(`
+          id,
+          secretary_id,
+          is_active,
+          started_at,
+          profiles!secretary_speaking_secretary_id_fkey (
+            full_name
+          )
+        `)
+        .eq('committee_id', committeeId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (secretaryData) {
+        setSecretarySpeaking({
+          id: secretaryData.id,
+          secretary_id: secretaryData.secretary_id,
+          is_active: secretaryData.is_active,
+          started_at: secretaryData.started_at,
+          profiles: {
+            full_name: (secretaryData.profiles as any)?.full_name || 'Secretario'
+          }
+        });
+      }
       setIsVotingActive(committeeData?.current_status === 'voting');
       
       // Si hay votación activa, cargar votos
@@ -543,6 +636,43 @@ export default function PublicDebateView() {
           setVoteCount({ for: 0, against: 0, abstain: 0 });
         }
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'secretary_speaking',
+        filter: `committee_id=eq.${committeeId}`
+      }, async () => {
+        console.log('Public view - Secretary speaking update');
+        
+        const { data: secretaryData } = await supabase
+          .from('secretary_speaking')
+          .select(`
+            id,
+            secretary_id,
+            is_active,
+            started_at,
+            profiles!secretary_speaking_secretary_id_fkey (
+              full_name
+            )
+          `)
+          .eq('committee_id', committeeId)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (secretaryData) {
+          setSecretarySpeaking({
+            id: secretaryData.id,
+            secretary_id: secretaryData.secretary_id,
+            is_active: secretaryData.is_active,
+            started_at: secretaryData.started_at,
+            profiles: {
+              full_name: (secretaryData.profiles as any)?.full_name || 'Secretario'
+            }
+          });
+        } else {
+          setSecretarySpeaking(null);
+        }
+      })
       .subscribe((status) => {
         console.log('Public view realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
@@ -606,6 +736,7 @@ export default function PublicDebateView() {
             <CurrentSpeakerHeader 
               key={currentSpeaker ? currentSpeaker.delegate_id : 'no-speaker'} 
               speaker={currentSpeaker}
+              secretary={secretarySpeaking}
             />
           </AnimatePresence>
         </div>

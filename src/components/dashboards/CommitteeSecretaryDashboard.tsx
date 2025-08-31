@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Vote, Star, Users, MessageSquare, Headphones, ExternalLink, Copy, Settings } from 'lucide-react';
+import { Clock, Vote, Star, Users, MessageSquare, Headphones, ExternalLink, Copy, Settings, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,6 +15,9 @@ import SpeakingQueue from '@/components/realtime/SpeakingQueue';
 import AttendancePanel from '@/components/realtime/AttendancePanel';
 import DetailedRatingForm from '@/components/ratings/DetailedRatingForm';
 import StaffRequestManager from '@/components/staff/StaffRequestManager';
+import AgendaManager from '@/components/agenda/AgendaManager';
+import SecretarySpeaking from '@/components/secretary/SecretarySpeaking';
+import AdvancedVotingPanel from '@/components/voting/AdvancedVotingPanel';
 
 
 interface Committee {
@@ -209,11 +212,16 @@ export default function CommitteeSecretaryDashboard() {
           {/* Tabs */}
           <motion.div variants={itemVariants}>
             <Tabs defaultValue="debate" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="debate" className="flex items-center space-x-1 text-xs sm:text-sm">
                   <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Gestión del Debate</span>
                   <span className="sm:hidden">Debate</span>
+                </TabsTrigger>
+                <TabsTrigger value="agenda" className="flex items-center space-x-1 text-xs sm:text-sm">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Agenda</span>
+                  <span className="sm:hidden">Agenda</span>
                 </TabsTrigger>
                 <TabsTrigger value="delegates" className="flex items-center space-x-1 text-xs sm:text-sm">
                   <Users className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -229,6 +237,19 @@ export default function CommitteeSecretaryDashboard() {
 
               <TabsContent value="debate" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Secretary Speaking Control */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center space-x-2 text-base">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Control del Secretario</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <SecretarySpeaking committeeId={committee.id} />
+                    </CardContent>
+                  </Card>
+
                   {/* Timer Control */}
                   <Card>
                     <CardHeader className="pb-3">
@@ -243,7 +264,7 @@ export default function CommitteeSecretaryDashboard() {
                   </Card>
 
                   {/* Speaking Queue Management */}
-                  <Card>
+                  <Card className="lg:col-span-2">
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center space-x-2 text-base">
                         <MessageSquare className="h-4 w-4" />
@@ -256,16 +277,16 @@ export default function CommitteeSecretaryDashboard() {
                   </Card>
                 </div>
 
-                {/* Voting Control - Full Width */}
+                {/* Advanced Voting Control - Full Width */}
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center space-x-2 text-base">
                       <Vote className="h-4 w-4" />
-                      <span>Votación</span>
+                      <span>Sistema de Votación Avanzado</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <VotingPanel committeeId={committee.id} isSecretary={true} />
+                    <AdvancedVotingPanel committeeId={committee.id} isSecretary={true} />
                   </CardContent>
                 </Card>
 
@@ -281,6 +302,10 @@ export default function CommitteeSecretaryDashboard() {
                     <DetailedRatingForm />
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="agenda" className="mt-4">
+                <AgendaManager committeeId={committee.id} />
               </TabsContent>
 
               <TabsContent value="delegates" className="mt-6">
