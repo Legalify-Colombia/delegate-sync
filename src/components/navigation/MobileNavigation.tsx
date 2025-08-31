@@ -18,11 +18,11 @@ const navigationItems = {
     { icon: Newspaper, label: 'Noticias', path: '/news' },
   ],
   committee_secretary: [
-    { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    { icon: Home, label: 'Inicio', path: '/dashboard' },
     { icon: Clock, label: 'Debate', path: '/dashboard?tab=timer' },
-    { icon: Vote, label: 'Votación', path: '/dashboard?tab=voting' },
+    { icon: Vote, label: 'Votar', path: '/dashboard?tab=voting' },
     { icon: Star, label: 'Calificar', path: '/dashboard?tab=rating' },
-    { icon: MessageSquare, label: 'Solicitudes', path: '/dashboard?tab=requests' },
+    { icon: MessageSquare, label: 'Staff', path: '/dashboard?tab=requests' },
   ],
   communications_secretary: [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
@@ -31,12 +31,11 @@ const navigationItems = {
     { icon: Newspaper, label: 'Noticias', path: '/news' },
   ],
   delegate: [
-    { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    { icon: Home, label: 'Inicio', path: '/dashboard' },
     { icon: Clock, label: 'Debate', path: '/dashboard?tab=timer' },
     { icon: Vote, label: 'Votar', path: '/dashboard?tab=voting' },
-    { icon: FileText, label: 'Mis Notas', path: '/dashboard?tab=notes' },
+    { icon: FileText, label: 'Notas', path: '/dashboard?tab=notes' },
     { icon: MessageSquare, label: 'Turno', path: '/dashboard?tab=speaking' },
-    { icon: Newspaper, label: 'Noticias', path: '/news' },
   ],
   staff: [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
@@ -61,8 +60,8 @@ export default function MobileNavigation() {
   return (
     <div className="md:hidden">
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
-        <div className="flex justify-around items-center h-16 px-2">
+      <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50 safe-area-bottom">
+        <div className="flex justify-around items-center h-16 px-1">
           {userNavItems.slice(0, 5).map((item) => {
             const isActive = location.pathname + location.search === item.path || 
                            (item.path === '/dashboard' && location.pathname === '/dashboard' && !location.search);
@@ -72,14 +71,22 @@ export default function MobileNavigation() {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 text-xs transition-colors",
+                  "flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 text-xs transition-all duration-200 rounded-lg mx-1",
                   isActive 
-                    ? "text-primary" 
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-primary bg-primary/10 scale-105" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
               >
-                <item.icon className={cn("h-5 w-5 mb-1", isActive && "text-primary")} />
-                <span className="truncate">{item.label}</span>
+                <item.icon className={cn(
+                  "h-5 w-5 mb-1 transition-all", 
+                  isActive && "text-primary scale-110"
+                )} />
+                <span className={cn(
+                  "truncate leading-tight transition-all",
+                  isActive && "font-medium"
+                )}>
+                  {item.label}
+                </span>
               </NavLink>
             );
           })}

@@ -119,19 +119,19 @@ export default function DelegateDashboard() {
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
       <DashboardHeader />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="space-y-6"
+          className="space-y-4"
         >
-          <motion.div variants={itemVariants} className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Panel del Delegado</h2>
-            <p className="text-sm text-slate-500">Participa en el debate y votaciones de tu comité</p>
+          <motion.div variants={itemVariants} className="mb-4">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">Panel del Delegado</h2>
+            <p className="text-sm text-muted-foreground">Participa en el debate y votaciones</p>
           </motion.div>
 
           {/* Committee Info */}
@@ -157,13 +157,13 @@ export default function DelegateDashboard() {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Timer */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Clock className="h-5 w-5" />
-                  <span>Temporizador de Debate</span>
+            <Card className="bg-card shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-foreground text-base">
+                  <Clock className="h-4 w-4" />
+                  <span>Temporizador</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -172,10 +172,10 @@ export default function DelegateDashboard() {
             </Card>
 
             {/* Voting */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Vote className="h-5 w-5" />
+            <Card className="bg-card shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-foreground text-base">
+                  <Vote className="h-4 w-4" />
                   <span>Votación</span>
                 </CardTitle>
               </CardHeader>
@@ -185,12 +185,12 @@ export default function DelegateDashboard() {
             </Card>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Speaking Queue */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="text-slate-800">Lista de Intervenciones</CardTitle>
-                <CardDescription className="text-slate-600">Solicita tu turno para hablar</CardDescription>
+            <Card className="bg-card shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-base">Intervenciones</CardTitle>
+                <CardDescription className="text-muted-foreground text-sm">Solicita tu turno</CardDescription>
               </CardHeader>
               <CardContent>
                 <SpeakingQueue committeeId={committee.id} />
@@ -198,10 +198,10 @@ export default function DelegateDashboard() {
             </Card>
 
             {/* Delegate Notes */}
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="text-slate-800">Mis Notas</CardTitle>
-                <CardDescription className="text-slate-600">Notas privadas del debate</CardDescription>
+            <Card className="bg-card shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-base">Mis Notas</CardTitle>
+                <CardDescription className="text-muted-foreground text-sm">Notas privadas</CardDescription>
               </CardHeader>
               <CardContent>
                 <DelegateNotes />
@@ -211,37 +211,37 @@ export default function DelegateDashboard() {
 
           {/* Ratings */}
           <motion.div variants={itemVariants}>
-            <Card className="bg-white shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-slate-800">
-                  <Star className="h-5 w-5" />
-                  <span>Mis Calificaciones</span>
+            <Card className="bg-card shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-foreground text-base">
+                  <Star className="h-4 w-4" />
+                  <span>Calificaciones</span>
                 </CardTitle>
-                <CardDescription className="text-slate-600">
-                  Calificación promedio: {averageRating} / 10
+                <CardDescription className="text-muted-foreground text-sm">
+                  Promedio: {averageRating} / 10
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {ratings.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {ratings.slice(0, 3).map((rating, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted/50 rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <span className="font-semibold">{rating.score}/10</span>
-                            <span className="text-sm text-slate-500">
+                            <span className="font-semibold text-sm">{rating.score}/10</span>
+                            <span className="text-xs text-muted-foreground">
                               {new Date(rating.created_at).toLocaleDateString()}
                             </span>
                           </div>
                           {rating.comments && (
-                            <p className="text-sm text-slate-600 mt-1">{rating.comments}</p>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{rating.comments}</p>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-500">Aún no tienes calificaciones.</p>
+                  <p className="text-muted-foreground text-sm">Aún no tienes calificaciones.</p>
                 )}
               </CardContent>
             </Card>
