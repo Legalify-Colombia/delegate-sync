@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface Committee {
   id: string;
@@ -313,20 +314,12 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="coverImage">URL de Imagen de Portada (Opcional)</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      id="coverImage"
-                      value={coverImageUrl}
-                      onChange={(e) => setCoverImageUrl(e.target.value)}
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <ImageUpload
+                  label="Imagen de Portada (Opcional)"
+                  onImageUploaded={setCoverImageUrl}
+                  currentImage={coverImageUrl}
+                  className="mb-4"
+                />
 
                 <div>
                   <Label htmlFor="content">Contenido de la Noticia</Label>

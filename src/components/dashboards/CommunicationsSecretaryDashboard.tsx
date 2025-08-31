@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import NewsEditor from '@/components/press/NewsEditor';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 // Iconos
 import { MessageSquare, FileText, PlusCircle, Newspaper, X, CheckCircle, XCircle, Edit } from 'lucide-react';
@@ -69,7 +70,12 @@ const CreateNewsModal = ({ onClose, createNews, newsData, setNewsData, committee
                         </SelectContent>
                     </Select>
                 </div>
-                <div><label className="text-sm font-medium text-gray-700 mb-1 block">URL de la Imagen de Portada</label><Input value={newsData.cover_image_url} onChange={(e) => setNewsData({...newsData, cover_image_url: e.target.value})} placeholder="https://ejemplo.com/imagen.jpg" /></div>
+                <ImageUpload
+                  label="Imagen de Portada (Opcional)"
+                  onImageUploaded={(url) => setNewsData({...newsData, cover_image_url: url})}
+                  currentImage={newsData.cover_image_url}
+                  className="mb-4"
+                />
                 <div><label className="text-sm font-medium text-gray-700 mb-1 block">Contenido</label><Textarea value={newsData.content} onChange={(e) => setNewsData({...newsData, content: e.target.value})} placeholder="Escribe el cuerpo de la noticia aquí..." rows={8} /></div>
             </div>
             <div className="p-6 bg-gray-50 rounded-b-xl flex justify-end space-x-3">
