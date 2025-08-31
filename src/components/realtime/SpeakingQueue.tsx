@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users, Timer } from 'lucide-react';
+import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users, Timer, Gavel } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ interface QueueEntry {
   status: 'pending' | 'speaking' | 'completed';
   requested_at: string;
   time_allocated: number;
+  type?: 'turno' | 'mocion' | null;
   profiles: {
     full_name: string;
     countries?: { name: string };
@@ -226,7 +227,7 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
     }
   };
 
-  const requestToSpeak = async () => {
+  const requestToSpeak = async (type: 'turno' | 'mocion' = 'turno') => {
     if (!profile) return;
 
     // Check if user already has a pending request
@@ -251,18 +252,19 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
         committee_id: committeeId,
         delegate_id: profile.id,
         position: nextPosition,
+        type: type,
       });
 
     if (error) {
       toast({
         title: "Error",
-        description: "No se pudo solicitar el turno",
+        description: `No se pudo solicitar ${type === 'mocion' ? 'la moción' : 'el turno'}`,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Turno solicitado",
-        description: "Tu solicitud ha sido agregada a la cola",
+        title: type === 'mocion' ? "Moción solicitada" : "Turno solicitado",
+        description: `Tu solicitud ha sido agregada a la cola como ${type === 'mocion' ? 'moción' : 'turno'}`,
       });
     }
   };
@@ -402,7 +404,15 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">{currentSpeaker.profiles.full_name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{currentSpeaker.profiles.full_name}</p>
+                  {currentSpeaker.type === 'mocion' && (
+                    <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning">
+                      <Gavel className="h-3 w-3 mr-1" />
+                      MOCIÓN
+                    </Badge>
+                  )}
+                </div>
                 {currentSpeaker.profiles.countries && (
                   <p className="text-sm text-muted-foreground">
                     {currentSpeaker.profiles.countries.name}
@@ -425,14 +435,23 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
 
         {/* Request to Speak Button (for delegates) */}
         {!isSecretary && profile?.role === 'delegate' && (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
             <Button
-              onClick={requestToSpeak}
+              onClick={() => requestToSpeak('turno')}
               disabled={!!userInQueue}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:flex-none"
             >
               <Hand className="h-4 w-4 mr-2" />
               {userInQueue ? 'Ya solicitaste turno' : 'Solicitar Turno'}
+            </Button>
+            <Button
+              onClick={() => requestToSpeak('mocion')}
+              disabled={!!userInQueue}
+              variant="outline"
+              className="flex-1 sm:flex-none"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Solicitar Moción
             </Button>
           </div>
         )}
@@ -446,7 +465,14 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
                 <div className="flex items-center space-x-3">
                   <Badge variant="secondary">{index + 1}</Badge>
                   <div>
-                    <p className="font-medium">{entry.profiles.full_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{entry.profiles.full_name}</p>
+                      {entry.type === 'mocion' && (
+                        <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning">
+                          MOCIÓN
+                        </Badge>
+                      )}
+                    </div>
                     {entry.profiles.countries && (
                       <p className="text-sm text-muted-foreground">
                         {entry.profiles.countries.name}

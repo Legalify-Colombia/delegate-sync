@@ -190,9 +190,9 @@ export default function CommitteeSecretaryDashboard() {
                   <Button 
                     variant={committee.current_status === 'voting' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => updateCommitteeStatus('voting')}
+                    onClick={() => updateCommitteeStatus(committee.current_status === 'voting' ? 'paused' : 'voting')}
                   >
-                    Iniciar Votación
+                    {committee.current_status === 'voting' ? 'Detener Votación' : 'Iniciar Votación'}
                   </Button>
                 </div>
               </CardContent>
