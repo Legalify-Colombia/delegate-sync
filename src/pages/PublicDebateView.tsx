@@ -999,7 +999,7 @@ export default function PublicDebateView() {
       </main>
 
       {/* Estilos CSS para el scroll personalizado */}
-      <style jsx global>{`
+      <style>{`
         .custom-scrollbar {
           scrollbar-width: thin;
           scrollbar-color: rgb(203 213 225) transparent;
@@ -1024,3 +1024,4 @@ export default function PublicDebateView() {
       `}</style>
     </div>
   );
+}
