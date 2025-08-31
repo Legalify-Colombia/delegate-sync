@@ -40,6 +40,7 @@ interface SecretarySpeaking {
 interface Delegate {
   id: string;
   country_name: string;
+  country_flag?: string;
   full_name: string;
   photo_url?: string;
   entity: string;
@@ -328,7 +329,7 @@ export default function PublicDebateView() {
         setCommittee(committeeData);
       }
 
-      // Cargar delegados
+      // Cargar delegados con información de países
       const { data: delegatesData } = await supabase
         .from('profiles')
         .select(`
@@ -338,7 +339,8 @@ export default function PublicDebateView() {
           "Entidad que representa",
           countries!profiles_country_id_fkey (
             name,
-            code
+            code,
+            flag
           )
         `)
         .eq('committee_id', committeeId)
@@ -348,6 +350,7 @@ export default function PublicDebateView() {
         const formattedDelegates = delegatesData.map((d: any) => ({
           id: d.id,
           country_name: d.countries?.name || 'Sin país',
+          country_flag: d.countries?.flag || '',
           full_name: d.full_name,
           photo_url: d.Photo_url,
           entity: d['Entidad que representa'] || '',
@@ -979,20 +982,22 @@ export default function PublicDebateView() {
                     whileHover={{ scale: 1.05 }}
                     className="flex flex-col items-center group cursor-pointer"
                   >
-                    <div className="relative">
-                      <div 
-                        className={`w-16 h-16 rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
-                          currentSpeaker?.delegate_id === delegate.id 
-                            ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
-                            : 'ring-2 ring-warning group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background'
-                        }`} 
-                      />
-                      {currentSpeaker?.delegate_id === delegate.id && (
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                          <Mic className="h-3 w-3 text-white" />
-                        </div>
-                      )}
-                    </div>
+                     <div className="relative">
+                       <div 
+                         className={`w-16 h-16 rounded-full transition-all duration-500 flex items-center justify-center text-2xl ${getDelegateStyle(delegate)} ${
+                           currentSpeaker?.delegate_id === delegate.id 
+                             ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
+                             : 'ring-2 ring-warning group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background'
+                         }`} 
+                       >
+                         {delegate.country_flag || '🏳️'}
+                       </div>
+                       {currentSpeaker?.delegate_id === delegate.id && (
+                         <div className="absolute -top-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                           <Mic className="h-3 w-3 text-white" />
+                         </div>
+                       )}
+                     </div>
                     <span className="text-sm font-semibold text-center w-20 mt-2 group-hover:text-primary transition-colors">
                       {delegate.country_name}
                     </span>
@@ -1020,21 +1025,23 @@ export default function PublicDebateView() {
                     whileHover={{ scale: 1.05 }}
                     className="flex flex-col items-center group cursor-pointer"
                   >
-                    <div className="relative">
-                      <div 
-                        style={{ width: `${circleSize}px`, height: `${circleSize}px` }}
-                        className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
-                          currentSpeaker?.delegate_id === delegate.id 
-                            ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
-                            : 'group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background'
-                        }`}
-                      />
-                      {currentSpeaker?.delegate_id === delegate.id && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">
-                          <Mic className="h-2.5 w-2.5 text-white" />
-                        </div>
-                      )}
-                    </div>
+                     <div className="relative">
+                       <div 
+                         style={{ width: `${circleSize}px`, height: `${circleSize}px`, fontSize: `${Math.max(circleSize * 0.4, 16)}px` }}
+                         className={`rounded-full transition-all duration-500 flex items-center justify-center ${getDelegateStyle(delegate)} ${
+                           currentSpeaker?.delegate_id === delegate.id 
+                             ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
+                             : 'group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background'
+                         }`}
+                       >
+                         {delegate.country_flag || '🏳️'}
+                       </div>
+                       {currentSpeaker?.delegate_id === delegate.id && (
+                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                           <Mic className="h-2.5 w-2.5 text-white" />
+                         </div>
+                       )}
+                     </div>
                     <span 
                       style={{width: `${Math.max(circleSize, 80)}px`}} 
                       className="text-xs text-center mt-2 truncate group-hover:text-primary transition-colors"
