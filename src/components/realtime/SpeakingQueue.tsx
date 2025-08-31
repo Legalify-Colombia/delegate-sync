@@ -127,30 +127,34 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
   const { toast } = useToast();
 
   useEffect(() => {
-    if (committeeId) {
-      fetchQueue();
-      
-      // Subscribe to realtime updates
-      const channel = supabase
-        .channel('speaking_queue_changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'speaking_queue',
-            filter: `committee_id=eq.${committeeId}`
-          },
-          () => {
-            fetchQueue();
-          }
-        )
-        .subscribe();
+    if (!committeeId) return;
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
+    fetchQueue();
+
+    // Suscripción Realtime por comité
+    const channel = supabase
+      .channel(`speaking-queue-${committeeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'speaking_queue',
+          filter: `committee_id=eq.${committeeId}`
+        },
+        () => {
+          fetchQueue();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          fetchQueue();
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [committeeId]);
 
   useEffect(() => {
