@@ -70,13 +70,16 @@ const TimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; s
     <div className="flex divide-x divide-border">
       <div className="px-6 text-center">
         <p className="text-sm font-medium text-muted-foreground">Tiempo de Sesión</p>
-        <p className="text-5xl font-bold tracking-tighter text-foreground">{formatTime(sessionTime)}</p>
+        <p className="text-4xl font-bold tracking-tighter text-foreground">{formatTime(sessionTime)}</p>
       </div>
       <div className="px-6 text-center">
         <p className="text-sm font-medium text-muted-foreground">Tiempo de Intervención</p>
-        <p className={`text-5xl font-bold tracking-tighter transition-colors ${getSpeakerTimeColor()}`}>
+        <p className={`text-4xl font-bold tracking-tighter transition-colors ${getSpeakerTimeColor()}`}>
           {formatTime(speakerTimeLeft)}
         </p>
+        {speakerTimeLeft < 0 && (
+          <p className="text-xs text-destructive font-medium mt-1">TIEMPO EXCEDIDO</p>
+        )}
       </div>
     </div>
   );
@@ -97,23 +100,27 @@ const CurrentSpeakerHeader = ({ speaker, isMotion }: { speaker: SpeakingQueue | 
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      className="flex items-center gap-4 bg-background/20 p-3 rounded-2xl min-w-[400px]"
+      className="flex items-center gap-4 bg-success/10 border border-success/20 p-4 rounded-2xl min-w-[400px]"
     >
       <img 
-        src={speaker.profiles.photo_url || `https://placehold.co/128x128/E5E7EB/1F2937?text=${speaker.profiles.country_name.slice(0, 3).toUpperCase()}`} 
+        src={speaker.profiles.photo_url || `https://placehold.co/128x128/10B981/FFFFFF?text=${speaker.profiles.country_name.slice(0, 3).toUpperCase()}`} 
         alt={speaker.profiles.full_name} 
         className="w-20 h-20 rounded-full ring-4 ring-success object-cover" 
       />
       <div className="flex-1">
         <AnimatePresence>
           {isMotion && 
-            <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="flex items-center gap-2 text-warning font-bold text-sm">
+            <motion.div initial={{opacity:0, y:-10}} animate={{opacity:1, y:0}} className="flex items-center gap-2 text-warning font-bold text-sm mb-1">
               <Gavel size={14}/> MOCIÓN DE ORDEN
             </motion.div>
           }
         </AnimatePresence>
-        <p className="text-3xl font-bold text-foreground">{speaker.profiles.country_name}</p>
-        <p className="text-lg text-muted-foreground">{speaker.profiles.full_name}</p>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-3 h-3 rounded-full bg-success animate-pulse"></div>
+          <span className="text-xs font-medium text-success uppercase tracking-wide">EN VIVO</span>
+        </div>
+        <p className="text-2xl font-bold text-foreground mb-1">{speaker.profiles.country_name}</p>
+        <p className="text-lg text-muted-foreground font-medium">{speaker.profiles.full_name}</p>
         <p className="text-sm text-muted-foreground">{speaker.profiles['Entidad que representa']}</p>
       </div>
     </motion.div>
@@ -340,11 +347,24 @@ export default function PublicDebateView() {
     if (!committee) return;
 
     const updateSpeakerTimer = () => {
+      // Si no hay orador activo, tiempo = 0
+      if (!currentSpeaker) {
+        setSpeakerTimeLeft(0);
+        return;
+      }
+
       if (committee.current_timer_end) {
         // Temporizador activo - puede ser negativo
         const endTime = new Date(committee.current_timer_end).getTime();
         const now = Date.now();
         const remaining = Math.floor((endTime - now) / 1000);
+        
+        // Reproducir sonido cuando llegue a 0 (solo una vez)
+        if (remaining <= 0 && speakerTimeLeft > 0) {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmgfCUnA2O6idikGGWO+6+OZUQ0PVqzn77BdGAU+ltryxnkpBSl+zPLaizsIGGy+7eSaUg0OUarg7rdnHgU9l9rzyHkpBSl8yPLaizoIGGy75eabUw4NTqXh8LZjHgU8ltrzxnknBSeAzvLZiToHGGG65OOYTgwPUqzj7bFbGQU9ltrzxnkpBSl8yPDaizwIF2u75uaZUw4NTqXh8LZjHgU8ltrzxnknBSeAzvLZiToHGGG65OOYTgwPUqzj7bFbGQU9ltrzxnkpBSl8yPDaizwIF2u75uaZUw4NTqXh8LZjHgU8ltrzxnknBSeAzvLZiToHGGG65OOYTgwPUqzj7bFbGQU9ltrzxnkpBSl8yPDaizwIF2u75uaZUw4NTqXh8LZjHgU8ltrzxnknBSeAzvLZiToHGGG65OOYTgwPUqzj7bFbGQU9ltrzxnkpBSl8yPDaizwIF2u75uaZUw4NTqXh8LZjHgU8ltrzxnknBSeAzvLZiToHGGG65OOYTgwPUqzj7bFbGQ==');
+          audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
         setSpeakerTimeLeft(remaining);
       } else if (committee.current_timer_remaining_seconds !== undefined && committee.current_timer_remaining_seconds !== null) {
         // Temporizador pausado - usar valor guardado (puede ser negativo)
@@ -360,7 +380,7 @@ export default function PublicDebateView() {
       const timer = setInterval(updateSpeakerTimer, 1000);
       return () => clearInterval(timer);
     }
-  }, [committee]);
+  }, [committee, currentSpeaker, speakerTimeLeft]);
 
   // Suscripciones en tiempo real optimizadas
   useEffect(() => {
