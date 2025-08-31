@@ -48,12 +48,19 @@ const TimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; s
   const formatTime = (seconds: number) => {
     const isNegative = seconds < 0;
     const absSeconds = Math.abs(seconds);
-    const date = new Date(absSeconds * 1000).toISOString().substr(11, 8);
-    return isNegative ? `-${date}` : date;
+    const hrs = Math.floor(absSeconds / 3600);
+    const mins = Math.floor((absSeconds % 3600) / 60);
+    const secs = absSeconds % 60;
+    
+    const timeString = hrs > 0 
+      ? `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+      : `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
+    return isNegative ? `-${timeString}` : timeString;
   };
 
   const getSpeakerTimeColor = () => {
-    if (speakerTimeLeft <= 0) return 'text-destructive';
+    if (speakerTimeLeft < 0) return 'text-destructive animate-pulse';
     if (speakerTimeLeft <= 10) return 'text-destructive';
     if (speakerTimeLeft <= 30) return 'text-warning';
     return 'text-success';
@@ -184,82 +191,119 @@ export default function PublicDebateView() {
         setVotes(voteMap);
       }
 
-      // Cargar orador actual y cola
-      const { data: speakerData } = await supabase
+      // Cargar orador actual y cola sin joins FK
+      const { data: speakerQueueData } = await supabase
         .from('speaking_queue')
-        .select(`
-          delegate_id,
-          status,
-          started_at,
-          time_allocated,
-          position,
-          profiles!speaking_queue_delegate_id_fkey (
-            full_name,
-            Photo_url,
-            "Entidad que representa",
-            countries!profiles_country_id_fkey (name)
-          )
-        `)
+        .select('delegate_id, status, started_at, time_allocated, position')
         .eq('committee_id', committeeId)
         .eq('status', 'speaking')
         .maybeSingle();
 
       const { data: queueData } = await supabase
         .from('speaking_queue')
-        .select(`
-          delegate_id,
-          status,
-          position,
-          profiles!speaking_queue_delegate_id_fkey (
-            full_name,
-            Photo_url,
-            "Entidad que representa",
-            countries!profiles_country_id_fkey (name)
-          )
-        `)
+        .select('delegate_id, status, position')
         .eq('committee_id', committeeId)
         .eq('status', 'pending')
         .order('position');
 
-      if (speakerData) {
-        const formattedSpeaker = {
-          delegate_id: (speakerData as any).delegate_id,
-          status: (speakerData as any).status,
-          started_at: (speakerData as any).started_at,
-          time_allocated: (speakerData as any).time_allocated,
-          position: (speakerData as any).position,
-          profiles: {
-            full_name: (speakerData as any).profiles?.full_name || '',
-            country_name: (speakerData as any).profiles?.countries?.name || '',
-            photo_url: (speakerData as any).profiles?.Photo_url,
-            'Entidad que representa': (speakerData as any).profiles?.['Entidad que representa'] || ''
+      // Si hay orador actual, cargar sus datos
+      if (speakerQueueData) {
+        const { data: speakerProfile } = await supabase
+          .from('profiles')
+          .select('full_name, Photo_url, "Entidad que representa", country_id')
+          .eq('id', speakerQueueData.delegate_id)
+          .single();
+
+        if (speakerProfile) {
+          let countryName = 'Sin país';
+          if (speakerProfile.country_id) {
+            const { data: country } = await supabase
+              .from('countries')
+              .select('name')
+              .eq('id', speakerProfile.country_id)
+              .single();
+            countryName = country?.name || 'Sin país';
           }
-        };
-        setCurrentSpeaker(formattedSpeaker);
+
+          setCurrentSpeaker({
+            delegate_id: speakerQueueData.delegate_id,
+            status: speakerQueueData.status,
+            started_at: speakerQueueData.started_at,
+            time_allocated: speakerQueueData.time_allocated,
+            position: speakerQueueData.position,
+            profiles: {
+              full_name: speakerProfile.full_name,
+              country_name: countryName,
+              photo_url: speakerProfile.Photo_url,
+              'Entidad que representa': speakerProfile['Entidad que representa'] || ''
+            }
+          });
+        }
       }
 
-      if (queueData) {
-        const formattedQueue = queueData.map((item: any) => ({
-          delegate_id: item.delegate_id,
-          status: item.status,
-          position: item.position,
-          profiles: {
-            full_name: item.profiles?.full_name || '',
-            country_name: item.profiles?.countries?.name || '',
-            photo_url: item.profiles?.Photo_url,
-            'Entidad que representa': item.profiles?.['Entidad que representa'] || ''
-          }
-        }));
-        setSpeakingQueue(formattedQueue);
+      // Cargar cola con perfiles
+      if (queueData && queueData.length > 0) {
+        const queueWithProfiles = await Promise.all(
+          queueData.map(async (item: any) => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, Photo_url, "Entidad que representa", country_id')
+              .eq('id', item.delegate_id)
+              .single();
+
+            let countryName = 'Sin país';
+            if (profile?.country_id) {
+              const { data: country } = await supabase
+                .from('countries')
+                .select('name')
+                .eq('id', profile.country_id)
+                .single();
+              countryName = country?.name || 'Sin país';
+            }
+
+            return {
+              delegate_id: item.delegate_id,
+              status: item.status,
+              position: item.position,
+              profiles: {
+                full_name: profile?.full_name || '',
+                country_name: countryName,
+                photo_url: profile?.Photo_url,
+                'Entidad que representa': profile?.['Entidad que representa'] || ''
+              }
+            };
+          })
+        );
+        setSpeakingQueue(queueWithProfiles);
       }
 
-      // Actualizar conteos de votos
-      if (votesData && votesData.length > 0) {
-        const counts = { for: 0, against: 0, abstain: 0 };
-        votesData.forEach(vote => {
-          counts[vote.vote_type as keyof typeof counts]++;
-        });
-        setVoteCount(counts);
+      // Verificar votación según estado del comité
+      setIsVotingActive(committeeData?.current_status === 'voting');
+      
+      // Si hay votación activa, cargar votos
+      if (committeeData?.current_status === 'voting') {
+        const { data: votesData } = await supabase
+          .from('votes')
+          .select('user_id, vote_type')
+          .eq('committee_id', committeeId);
+
+        if (votesData && votesData.length > 0) {
+          const voteMap: { [key: string]: string } = {};
+          const counts = { for: 0, against: 0, abstain: 0 };
+          votesData.forEach(vote => {
+            voteMap[vote.user_id] = vote.vote_type;
+            counts[vote.vote_type as keyof typeof counts]++;
+          });
+          setVotes(voteMap);
+          setVoteCount(counts);
+        } else {
+          setVotes({});
+          setVoteCount({ for: 0, against: 0, abstain: 0 });
+        }
+      } else {
+        setIsVotingActive(false);
+        setVotes({});
+        setVoteCount({ for: 0, against: 0, abstain: 0 });
       }
     };
 
@@ -291,19 +335,19 @@ export default function PublicDebateView() {
     }
   }, [committee]);
 
-  // Timer del orador - basado en temporizador del comité
+  // Timer del orador - basado en temporizador del comité (permite negativo)
   useEffect(() => {
     if (!committee) return;
 
     const updateSpeakerTimer = () => {
       if (committee.current_timer_end) {
-        // Temporizador activo
+        // Temporizador activo - puede ser negativo
         const endTime = new Date(committee.current_timer_end).getTime();
         const now = Date.now();
-        const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+        const remaining = Math.floor((endTime - now) / 1000);
         setSpeakerTimeLeft(remaining);
-      } else if (committee.current_timer_remaining_seconds) {
-        // Temporizador pausado
+      } else if (committee.current_timer_remaining_seconds !== undefined && committee.current_timer_remaining_seconds !== null) {
+        // Temporizador pausado - usar valor guardado (puede ser negativo)
         setSpeakerTimeLeft(committee.current_timer_remaining_seconds);
       } else {
         setSpeakerTimeLeft(0);
@@ -342,79 +386,97 @@ export default function PublicDebateView() {
       }, async (payload) => {
         console.log('Speaking queue update:', payload);
         
-        // Recargar toda la cola y orador actual
-        const { data: currentSpeakerData } = await supabase
+        // Recargar orador actual y cola sin joins FK
+        const { data: speakerQueueData } = await supabase
           .from('speaking_queue')
-          .select(`
-            delegate_id,
-            status,
-            started_at,
-            time_allocated,
-            position,
-            profiles!speaking_queue_delegate_id_fkey (
-              full_name,
-              Photo_url,
-              "Entidad que representa",
-              countries!profiles_country_id_fkey (name)
-            )
-          `)
+          .select('delegate_id, status, started_at, time_allocated, position')
           .eq('committee_id', committeeId)
           .eq('status', 'speaking')
           .maybeSingle();
 
         const { data: queueData } = await supabase
           .from('speaking_queue')
-          .select(`
-            delegate_id,
-            status,
-            position,
-            profiles!speaking_queue_delegate_id_fkey (
-              full_name,
-              Photo_url,
-              "Entidad que representa",
-              countries!profiles_country_id_fkey (name)
-            )
-          `)
+          .select('delegate_id, status, position')
           .eq('committee_id', committeeId)
           .eq('status', 'pending')
           .order('position');
 
-        if (currentSpeakerData) {
-          const formattedSpeaker = {
-            delegate_id: currentSpeakerData.delegate_id,
-            status: currentSpeakerData.status,
-            started_at: currentSpeakerData.started_at,
-            time_allocated: currentSpeakerData.time_allocated,
-            position: currentSpeakerData.position,
-            profiles: {
-              full_name: (currentSpeakerData as any).profiles?.full_name || '',
-              country_name: (currentSpeakerData as any).profiles?.countries?.name || '',
-              photo_url: (currentSpeakerData as any).profiles?.Photo_url,
-              'Entidad que representa': (currentSpeakerData as any).profiles?.['Entidad que representa'] || ''
+        // Cargar orador actual con perfil
+        if (speakerQueueData) {
+          const { data: speakerProfile } = await supabase
+            .from('profiles')
+            .select('full_name, Photo_url, "Entidad que representa", country_id')
+            .eq('id', speakerQueueData.delegate_id)
+            .single();
+
+          if (speakerProfile) {
+            let countryName = 'Sin país';
+            if (speakerProfile.country_id) {
+              const { data: country } = await supabase
+                .from('countries')
+                .select('name')
+                .eq('id', speakerProfile.country_id)
+                .single();
+              countryName = country?.name || 'Sin país';
             }
-          };
-          setCurrentSpeaker(formattedSpeaker);
+
+            setCurrentSpeaker({
+              delegate_id: speakerQueueData.delegate_id,
+              status: speakerQueueData.status,
+              started_at: speakerQueueData.started_at,
+              time_allocated: speakerQueueData.time_allocated,
+              position: speakerQueueData.position,
+              profiles: {
+                full_name: speakerProfile.full_name,
+                country_name: countryName,
+                photo_url: speakerProfile.Photo_url,
+                'Entidad que representa': speakerProfile['Entidad que representa'] || ''
+              }
+            });
+          }
         } else {
           setCurrentSpeaker(null);
         }
 
-        if (queueData) {
-          const formattedQueue = queueData.map((item: any) => ({
-            delegate_id: item.delegate_id,
-            status: item.status,
-            position: item.position,
-            profiles: {
-              full_name: item.profiles?.full_name || '',
-              country_name: item.profiles?.countries?.name || '',
-              photo_url: item.profiles?.Photo_url,
-              'Entidad que representa': item.profiles?.['Entidad que representa'] || ''
-            }
-          }));
-          setSpeakingQueue(formattedQueue);
+        // Cargar cola con perfiles
+        if (queueData && queueData.length > 0) {
+          const queueWithProfiles = await Promise.all(
+            queueData.map(async (item: any) => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, Photo_url, "Entidad que representa", country_id')
+                .eq('id', item.delegate_id)
+                .single();
+
+              let countryName = 'Sin país';
+              if (profile?.country_id) {
+                const { data: country } = await supabase
+                  .from('countries')
+                  .select('name')
+                  .eq('id', profile.country_id)
+                  .single();
+                countryName = country?.name || 'Sin país';
+              }
+
+              return {
+                delegate_id: item.delegate_id,
+                status: item.status,
+                position: item.position,
+                profiles: {
+                  full_name: profile?.full_name || '',
+                  country_name: countryName,
+                  photo_url: profile?.Photo_url,
+                  'Entidad que representa': profile?.['Entidad que representa'] || ''
+                }
+              };
+            })
+          );
+          setSpeakingQueue(queueWithProfiles);
         } else {
           setSpeakingQueue([]);
         }
       })
+      // Votos - actualizar según estado del comité
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -423,22 +485,33 @@ export default function PublicDebateView() {
       }, async () => {
         console.log('Votes update');
         
-        // Recargar todos los votos
-        const { data: votesData } = await supabase
-          .from('votes')
-          .select('user_id, vote_type')
-          .eq('committee_id', committeeId);
+        // Solo actualizar votos si el comité está en votación
+        const { data: currentCommittee } = await supabase
+          .from('committees')
+          .select('current_status')
+          .eq('id', committeeId)
+          .single();
+        
+        if (currentCommittee?.current_status === 'voting') {
+          const { data: votesData } = await supabase
+            .from('votes')
+            .select('user_id, vote_type')
+            .eq('committee_id', committeeId);
 
-        if (votesData && votesData.length > 0) {
-          setIsVotingActive(true);
-          const voteMap: { [key: string]: string } = {};
-          const counts = { for: 0, against: 0, abstain: 0 };
-          votesData.forEach(vote => {
-            voteMap[vote.user_id] = vote.vote_type;
-            counts[vote.vote_type as keyof typeof counts]++;
-          });
-          setVotes(voteMap);
-          setVoteCount(counts);
+          if (votesData && votesData.length > 0) {
+            setIsVotingActive(true);
+            const voteMap: { [key: string]: string } = {};
+            const counts = { for: 0, against: 0, abstain: 0 };
+            votesData.forEach(vote => {
+              voteMap[vote.user_id] = vote.vote_type;
+              counts[vote.vote_type as keyof typeof counts]++;
+            });
+            setVotes(voteMap);
+            setVoteCount(counts);
+          } else {
+            setVotes({});
+            setVoteCount({ for: 0, against: 0, abstain: 0 });
+          }
         } else {
           setIsVotingActive(false);
           setVotes({});
