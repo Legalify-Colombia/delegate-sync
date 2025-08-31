@@ -94,19 +94,24 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
         assigned_staff:profiles!staff_requests_assigned_to_fkey (full_name)
       `);
 
-    if (isStaff) {
-      // Staff sees all requests or assigned to them
-      if (profile.role !== 'admin') {
-        query = query.or(`assigned_to.is.null,assigned_to.eq.${profile.id}`);
-      }
-    } else {
-      // Secretaries see only their requests
+    // Staff puede ver todas las solicitudes, secretarios solo las suyas
+    if (isStaff && profile.role === 'staff') {
+      // Staff ve todas las solicitudes sin filtro
+    } else if (!isStaff) {
+      // Secretarios solo ven sus propias solicitudes
       query = query.eq('requester_id', profile.id);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
 
-    if (!error) {
+    if (error) {
+      console.error('Error fetching requests:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las solicitudes",
+        variant: "destructive",
+      });
+    } else {
       setRequests((data as any) || []);
     }
     setLoading(false);
@@ -149,7 +154,12 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
   };
 
   const updateRequestStatus = async (requestId: string, status: 'in_progress' | 'completed' | 'archived') => {
-    const updateData: any = { status };
+    if (!profile) return;
+
+    const updateData: any = { 
+      status,
+      updated_at: new Date().toISOString()
+    };
     
     if (status === 'in_progress' && profile) {
       updateData.assigned_to = profile.id;
@@ -163,6 +173,7 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
       .eq('id', requestId);
 
     if (error) {
+      console.error('Error updating request:', error);
       toast({
         title: "Error",
         description: "No se pudo actualizar la solicitud",
@@ -170,7 +181,7 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
       });
     } else {
       const messages = {
-        in_progress: 'Solicitud tomada en progreso',
+        in_progress: `Solicitud tomada por ${profile.full_name}`,
         completed: 'Solicitud marcada como completada',
         archived: 'Solicitud archivada',
       };
@@ -179,6 +190,9 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
         title: "Actualizado",
         description: messages[status],
       });
+      
+      // Refrescar la lista inmediatamente
+      fetchRequests();
     }
   };
 
