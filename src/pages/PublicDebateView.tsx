@@ -399,7 +399,7 @@ export default function PublicDebateView() {
                   currentSpeaker?.delegate_id === delegate.id 
                     ? 'ring-4 ring-success' 
                     : 'ring-2 ring-warning'
-                }`} 
+                }`}
               />
               <span className="text-sm font-semibold text-muted-foreground mt-2 text-center w-24">
                 {delegate.country_name}
@@ -423,7 +423,7 @@ export default function PublicDebateView() {
                   currentSpeaker?.delegate_id === delegate.id 
                     ? 'ring-4 ring-offset-4 ring-offset-background ring-success' 
                     : ''
-                }`} 
+                }`}
               />
               <span 
                 style={{width: `${circleSize}px`}} 

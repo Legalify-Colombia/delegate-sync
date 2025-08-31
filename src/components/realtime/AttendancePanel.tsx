@@ -15,9 +15,9 @@ interface Delegate {
 interface AttendanceRecord {
   id: string;
   committee_id: string;
-  delegate_id: string;
-  status: 'present' | 'absent';
-  created_at: string;
+  profile_id: string;
+  presente: boolean;
+  fecha: string;
 }
 
 interface AttendancePanelProps {
@@ -26,7 +26,7 @@ interface AttendancePanelProps {
 
 export default function AttendancePanel({ committeeId }: AttendancePanelProps) {
   const [delegates, setDelegates] = useState<Delegate[]>([]);
-  const [attendanceMap, setAttendanceMap] = useState<Record<string, 'present' | 'absent'>>({});
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -71,7 +71,7 @@ export default function AttendancePanel({ committeeId }: AttendancePanelProps) {
         .from('asistencia')
         .select('*')
         .eq('committee_id', committeeId)
-        .order('created_at', { ascending: false });
+        .order('fecha', { ascending: false });
 
       if (attErr) {
         console.error('Error fetching attendance:', attErr);
@@ -79,15 +79,15 @@ export default function AttendancePanel({ committeeId }: AttendancePanelProps) {
 
       const latestByDelegate = new Map<string, AttendanceRecord>();
       (attendanceData as any[] | null)?.forEach((rec: any) => {
-        if (!latestByDelegate.has(rec.delegate_id)) {
-          latestByDelegate.set(rec.delegate_id, rec);
+        if (!latestByDelegate.has(rec.profile_id)) {
+          latestByDelegate.set(rec.profile_id, rec);
         }
       });
 
-      const map: Record<string, 'present' | 'absent'> = {};
+      const map: Record<string, boolean> = {};
       delegates.forEach((d: any) => {
         const latest = latestByDelegate.get(d.id);
-        map[d.id] = latest?.status ?? 'absent';
+        map[d.id] = latest?.presente ?? false;
       });
       setAttendanceMap(map);
     } catch (e) {
@@ -97,15 +97,15 @@ export default function AttendancePanel({ committeeId }: AttendancePanelProps) {
     }
   };
 
-  const setStatus = async (delegateId: string, status: 'present' | 'absent') => {
+  const setStatus = async (delegateId: string, presente: boolean) => {
     try {
       // Insert a new attendance record (assumes RLS allows committee secretaries)
       const { error } = await (supabase as any)
         .from('asistencia')
         .insert({
           committee_id: committeeId,
-          delegate_id: delegateId,
-          status,
+          profile_id: delegateId,
+          presente,
         });
 
       if (error) {
@@ -113,15 +113,15 @@ export default function AttendancePanel({ committeeId }: AttendancePanelProps) {
         return;
       }
 
-      setAttendanceMap((prev) => ({ ...prev, [delegateId]: status }));
-      toast({ title: 'Asistencia actualizada', description: status === 'present' ? 'Marcado como presente' : 'Marcado como ausente' });
+      setAttendanceMap((prev) => ({ ...prev, [delegateId]: presente }));
+      toast({ title: 'Asistencia actualizada', description: presente ? 'Marcado como presente' : 'Marcado como ausente' });
     } catch (e) {
       console.error(e);
       toast({ title: 'Error', description: 'Ocurrió un problema al actualizar', variant: 'destructive' });
     }
   };
 
-  const presentCount = useMemo(() => Object.values(attendanceMap).filter(s => s === 'present').length, [attendanceMap]);
+  const presentCount = useMemo(() => Object.values(attendanceMap).filter(s => s === true).length, [attendanceMap]);
 
   return (
     <Card>
@@ -147,22 +147,22 @@ export default function AttendancePanel({ committeeId }: AttendancePanelProps) {
                   <p className="font-medium">{d.full_name}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {attendanceMap[d.id] === 'present' ? (
-                    <Badge variant="secondary">Presente</Badge>
+                  {attendanceMap[d.id] ? (
+                    <Badge variant="secondary" className="bg-success text-success-foreground">Presente</Badge>
                   ) : (
-                    <Badge variant="outline">Ausente</Badge>
+                    <Badge variant="outline" className="text-muted-foreground">Ausente</Badge>
                   )}
                   <Button
-                    variant={attendanceMap[d.id] === 'present' ? 'default' : 'outline'}
+                    variant={attendanceMap[d.id] ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setStatus(d.id, 'present')}
+                    onClick={() => setStatus(d.id, true)}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" /> Presente
                   </Button>
                   <Button
-                    variant={attendanceMap[d.id] === 'absent' ? 'default' : 'outline'}
+                    variant={!attendanceMap[d.id] ? 'destructive' : 'outline'}
                     size="sm"
-                    onClick={() => setStatus(d.id, 'absent')}
+                    onClick={() => setStatus(d.id, false)}
                   >
                     <UserX className="h-4 w-4 mr-2" /> Ausente
                   </Button>
