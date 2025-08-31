@@ -347,12 +347,6 @@ export default function PublicDebateView() {
     if (!committee) return;
 
     const updateSpeakerTimer = () => {
-      // Si no hay orador activo, tiempo = 0
-      if (!currentSpeaker) {
-        setSpeakerTimeLeft(0);
-        return;
-      }
-
       if (committee.current_timer_end) {
         // Temporizador activo - puede ser negativo
         const endTime = new Date(committee.current_timer_end).getTime();
@@ -370,7 +364,15 @@ export default function PublicDebateView() {
         // Temporizador pausado - usar valor guardado (puede ser negativo)
         setSpeakerTimeLeft(committee.current_timer_remaining_seconds);
       } else {
-        setSpeakerTimeLeft(0);
+        // Si no hay temporizador activo, mostrar tiempo asignado del orador actual o 0
+        if (currentSpeaker) {
+          const queueItem = speakingQueue.find(item => 
+            item.delegate_id === currentSpeaker.delegate_id && item.status === 'speaking'
+          );
+          setSpeakerTimeLeft(queueItem?.time_allocated || 0);
+        } else {
+          setSpeakerTimeLeft(0);
+        }
       }
     };
 
@@ -380,7 +382,7 @@ export default function PublicDebateView() {
       const timer = setInterval(updateSpeakerTimer, 1000);
       return () => clearInterval(timer);
     }
-  }, [committee, currentSpeaker, speakerTimeLeft]);
+  }, [committee, currentSpeaker, speakerTimeLeft, speakingQueue]);
 
   // Suscripciones en tiempo real optimizadas
   useEffect(() => {

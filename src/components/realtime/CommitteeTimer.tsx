@@ -90,7 +90,17 @@ export default function CommitteeTimer({ committeeId, isSecretary = false }: Com
   };
 
   const startTimer = async () => {
-    const endTime = new Date(Date.now() + inputMinutes * 60 * 1000);
+    // First check if there's a current speaker with assigned time
+    const { data: currentSpeaker } = await supabase
+      .from('speaking_queue')
+      .select('time_allocated')
+      .eq('committee_id', committeeId)
+      .eq('status', 'speaking')
+      .single();
+
+    // Use the speaker's assigned time if available, otherwise use input minutes
+    const durationSeconds = currentSpeaker?.time_allocated || (inputMinutes * 60);
+    const endTime = new Date(Date.now() + durationSeconds * 1000);
     
     const { error } = await supabase
       .from('committees')
@@ -104,10 +114,14 @@ export default function CommitteeTimer({ committeeId, isSecretary = false }: Com
         .insert({
           committee_id: committeeId,
           event_type: 'timer_start',
-          details: { duration_minutes: inputMinutes }
+          details: { 
+            duration_minutes: Math.floor(durationSeconds / 60),
+            duration_seconds: durationSeconds,
+            source: currentSpeaker ? 'speaker_assigned' : 'manual_input'
+          }
         });
 
-      setTimeLeft(inputMinutes * 60);
+      setTimeLeft(durationSeconds);
       setIsRunning(true);
     }
   };
