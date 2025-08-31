@@ -159,8 +159,10 @@ export default function CommunicationsSecretaryDashboard() {
     const createNews = async () => {
         if (!profile || !newsData.title.trim() || !newsData.content.trim()) return;
         setLoading(true);
-        // Si el usuario es communications_secretary, la noticia se publica automáticamente
-        const isCommSecretary = profile.role === 'communications_secretary';
+        // Solo communications_secretary puede auto-publicar, press debe enviar para revisión
+        const isCommSecretary = profile.role === 'communications_secretary' || 
+                                profile.role === 'admin' || 
+                                profile.role === 'secretary_general';
         const { error } = await supabase.from('news_publications').insert({
             title: newsData.title.trim(),
             content: newsData.content.trim(),

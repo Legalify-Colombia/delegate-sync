@@ -108,8 +108,12 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
     setEditingPublication(null);
   };
 
-  // Permitir publicación automática para communications_secretary y press
-  const canAutoPublish = profile.role === 'communications_secretary' || profile.role === 'press';
+  // Solo communications_secretary y roles superiores pueden auto-publicar
+  // Press debe enviar para revisión
+  const canAutoPublish = profile.role === 'communications_secretary' || 
+                          profile.role === 'admin' || 
+                          profile.role === 'secretary_general';
+  
   const handleSave = async (status: 'draft' | 'submitted_for_review' | 'published_internal') => {
     if (!profile || !title.trim() || !content.trim()) {
       toast({
