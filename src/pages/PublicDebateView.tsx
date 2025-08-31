@@ -314,34 +314,32 @@ export default function PublicDebateView() {
     }
   }, [committee]);
 
-  // Suscripciones en tiempo real
+  // Suscripciones en tiempo real optimizadas
   useEffect(() => {
     if (!committeeId) return;
 
-    // Suscripción a cambios en el comité
-    const committeeChannel = supabase
-      .channel('committee-changes')
+    // Canal unificado para todos los cambios de tiempo real
+    const realtimeChannel = supabase
+      .channel(`committee-${committeeId}-realtime`)
       .on('postgres_changes', {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'committees',
         filter: `id=eq.${committeeId}`
       }, (payload) => {
+        console.log('Committee update:', payload);
         setCommittee(payload.new as Committee);
       })
-      .subscribe();
-
-    // Suscripción a cambios en la cola de oradores
-    const speakingChannel = supabase
-      .channel('speaking-queue-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'speaking_queue',
         filter: `committee_id=eq.${committeeId}`
       }, async (payload) => {
-        // Recargar orador actual y cola
-        const { data: speakerData } = await supabase
+        console.log('Speaking queue update:', payload);
+        
+        // Recargar toda la cola y orador actual
+        const { data: currentSpeakerData } = await supabase
           .from('speaking_queue')
           .select(`
             delegate_id,
@@ -377,18 +375,18 @@ export default function PublicDebateView() {
           .eq('status', 'pending')
           .order('position');
 
-        if (speakerData) {
+        if (currentSpeakerData) {
           const formattedSpeaker = {
-            delegate_id: (speakerData as any).delegate_id,
-            status: (speakerData as any).status,
-            started_at: (speakerData as any).started_at,
-            time_allocated: (speakerData as any).time_allocated,
-            position: (speakerData as any).position,
+            delegate_id: currentSpeakerData.delegate_id,
+            status: currentSpeakerData.status,
+            started_at: currentSpeakerData.started_at,
+            time_allocated: currentSpeakerData.time_allocated,
+            position: currentSpeakerData.position,
             profiles: {
-              full_name: (speakerData as any).profiles?.full_name || '',
-              country_name: (speakerData as any).profiles?.countries?.name || '',
-              photo_url: (speakerData as any).profiles?.Photo_url,
-              'Entidad que representa': (speakerData as any).profiles?.['Entidad que representa'] || ''
+              full_name: (currentSpeakerData as any).profiles?.full_name || '',
+              country_name: (currentSpeakerData as any).profiles?.countries?.name || '',
+              photo_url: (currentSpeakerData as any).profiles?.Photo_url,
+              'Entidad que representa': (currentSpeakerData as any).profiles?.['Entidad que representa'] || ''
             }
           };
           setCurrentSpeaker(formattedSpeaker);
@@ -409,19 +407,18 @@ export default function PublicDebateView() {
             }
           }));
           setSpeakingQueue(formattedQueue);
+        } else {
+          setSpeakingQueue([]);
         }
       })
-      .subscribe();
-
-    // Suscripción a votos
-    const votesChannel = supabase
-      .channel('votes-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'votes',
         filter: `committee_id=eq.${committeeId}`
       }, async () => {
+        console.log('Votes update');
+        
         // Recargar todos los votos
         const { data: votesData } = await supabase
           .from('votes')
@@ -444,12 +441,12 @@ export default function PublicDebateView() {
           setVoteCount({ for: 0, against: 0, abstain: 0 });
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
-      supabase.removeChannel(committeeChannel);
-      supabase.removeChannel(speakingChannel);
-      supabase.removeChannel(votesChannel);
+      supabase.removeChannel(realtimeChannel);
     };
   }, [committeeId]);
 
