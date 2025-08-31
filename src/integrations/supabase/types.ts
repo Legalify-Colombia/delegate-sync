@@ -332,7 +332,29 @@ export type Database = {
           secretary_id?: string
           speech_appreciation?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_committee"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_delegate"
+            columns: ["delegate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_secretary"
+            columns: ["secretary_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       news_publications: {
         Row: {
@@ -827,6 +849,16 @@ export type Database = {
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      register_agenda_participation: {
+        Args: {
+          p_agenda_item_id: string
+          p_committee_id: string
+          p_delegate_id: string
+          p_participation_type?: string
+          p_time_used?: number
+        }
+        Returns: string
       }
     }
     Enums: {
