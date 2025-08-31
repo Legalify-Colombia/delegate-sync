@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Vote, FileText, Star } from 'lucide-react';
+import { Clock, Vote, FileText, Star, Newspaper } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
 import SpeakingQueue from '@/components/realtime/SpeakingQueue';
@@ -30,15 +30,40 @@ export default function DelegateDashboard() {
   const [committee, setCommittee] = useState<Committee | null>(null);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
+  const [countryInfo, setCountryInfo] = useState<{ name: string; flag: string } | null>(null);
 
   useEffect(() => {
     if (profile?.committee_id) {
       fetchCommitteeData();
       fetchRatings();
+      if (profile?.role === 'delegate' && profile.country_id) {
+        fetchCountryInfo();
+      }
     } else {
       setLoading(false);
     }
   }, [profile]);
+
+  const fetchCountryInfo = async () => {
+    if (profile?.country_id) {
+      try {
+        const { data: country, error } = await supabase
+          .from('countries')
+          .select('name, flag')
+          .eq('id', profile.country_id)
+          .maybeSingle();
+        
+        if (country && !error) {
+          setCountryInfo({
+            name: country.name,
+            flag: country.flag || '🏳️'
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching country info:', err);
+      }
+    }
+  };
 
   const fetchCommitteeData = async () => {
     if (!profile?.committee_id) return;
@@ -98,7 +123,24 @@ export default function DelegateDashboard() {
   if (!committee) {
     return (
       <div className="min-h-screen bg-slate-100">
-        <DashboardHeader />
+        {/* Custom Delegate Header for no committee state */}
+        <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-xl font-bold text-foreground">Panel del Delegado</h1>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Link to="/news">
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    <Newspaper className="h-4 w-4" />
+                    <span className="hidden sm:inline">Noticias</span>
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="bg-white p-6 rounded-xl shadow-md">
             <h3 className="text-xl font-bold text-slate-800 mb-2">Sin Comité Asignado</h3>
@@ -120,7 +162,44 @@ export default function DelegateDashboard() {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <DashboardHeader />
+      {/* Custom Delegate Header */}
+      <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <h1 className="text-xl font-bold text-foreground">Panel del Delegado</h1>
+                {countryInfo && (
+                  <div className="flex items-center space-x-2 bg-muted/50 px-3 py-1 rounded-full">
+                    {countryInfo.flag ? (
+                      <img 
+                        src={countryInfo.flag} 
+                        alt={`Bandera de ${countryInfo.name}`}
+                        className="w-8 h-6 object-cover rounded border border-border"
+                      />
+                    ) : (
+                      <span className="text-lg">🏳️</span>
+                    )}
+                    <div className="text-sm">
+                      <div className="font-semibold text-foreground">{profile?.full_name}</div>
+                      <div className="text-muted-foreground">{countryInfo.name}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Link to="/news">
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <Newspaper className="h-4 w-4" />
+                  <span className="hidden sm:inline">Noticias</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
       
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4">
         <motion.div
@@ -129,11 +208,6 @@ export default function DelegateDashboard() {
           animate="visible"
           className="space-y-4"
         >
-          <motion.div variants={itemVariants} className="mb-4">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">Panel del Delegado</h2>
-            <p className="text-sm text-muted-foreground">Participa en el debate y votaciones</p>
-          </motion.div>
-
           {/* Committee Info */}
           <motion.div variants={itemVariants}>
             <Card className="bg-white shadow-md">
