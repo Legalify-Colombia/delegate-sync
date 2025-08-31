@@ -133,10 +133,14 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
     }
 
     // Solo permitir valores válidos para status
-    const allowedStatus = ['draft', 'submitted_for_review', 'approved', 'rejected', 'published_internal'];
-    let statusToSend = canAutoPublish ? 'approved' : status;
-    if (!allowedStatus.includes(statusToSend)) {
-      statusToSend = 'draft';
+    let statusToSend: string = status;
+    
+    // Si es press y está intentando enviar para revisión o publicación, forzar a submitted_for_review
+    if (profile.role === 'press' && (status === 'submitted_for_review' || status === 'published_internal')) {
+      statusToSend = 'submitted_for_review';
+    } else if (canAutoPublish && status === 'submitted_for_review') {
+      // Si puede auto-publicar y está enviando para revisión, aprobar directamente
+      statusToSend = 'approved';
     }
 
     const publicationData: {
@@ -191,9 +195,12 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
         approved: 'Noticia publicada y visible',
       };
 
+      // Mostrar mensaje según el estado final real
+      const finalMessage = messages[statusToSend as keyof typeof messages] || messages[status];
+
       toast({
         title: "Éxito",
-        description: canAutoPublish ? messages['approved'] : messages[status],
+        description: finalMessage,
       });
 
       resetForm();

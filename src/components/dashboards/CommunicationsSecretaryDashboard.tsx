@@ -159,21 +159,27 @@ export default function CommunicationsSecretaryDashboard() {
     const createNews = async () => {
         if (!profile || !newsData.title.trim() || !newsData.content.trim()) return;
         setLoading(true);
-        // Solo communications_secretary puede auto-publicar, press debe enviar para revisión
-        const isCommSecretary = profile.role === 'communications_secretary' || 
-                                profile.role === 'admin' || 
-                                profile.role === 'secretary_general';
+        // Solo communications_secretary, admin y secretary_general pueden auto-publicar
+        const canAutoPublish = profile.role === 'communications_secretary' || 
+                               profile.role === 'admin' || 
+                               profile.role === 'secretary_general';
+        
+        // Si es press, siempre enviar para revisión, si puede auto-publicar, aprobar directamente
+        const status = profile.role === 'press' ? 'submitted_for_review' : 
+                      canAutoPublish ? 'approved' : 'submitted_for_review';
+        
         const { error } = await supabase.from('news_publications').insert({
             title: newsData.title.trim(),
             content: newsData.content.trim(),
             cover_image_url: newsData.cover_image_url.trim() || null,
             committee_id: newsData.committee_id || null,
             author_id: profile.id,
-            status: isCommSecretary ? 'approved' : 'submitted_for_review'
+            status: status
         });
         if (error) { toast({ title: "Error", description: "No se pudo crear la noticia", variant: "destructive" }); }
         else {
-            toast({ title: "Éxito", description: isCommSecretary ? "Noticia publicada y visible." : "Noticia enviada para revisión." });
+            const message = status === 'approved' ? "Noticia publicada y visible." : "Noticia enviada para revisión.";
+            toast({ title: "Éxito", description: message });
             setNewsData({ title: '', content: '', cover_image_url: '', committee_id: '' });
             await fetchNews();
             setActiveModal(null);
