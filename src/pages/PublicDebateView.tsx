@@ -828,13 +828,13 @@ export default function PublicDebateView() {
     if (isVotingActive) {
       const vote = votes[delegate.id];
       switch (vote) {
-        case 'for': return 'bg-primary';
-        case 'against': return 'bg-destructive';
-        case 'abstain': return 'bg-muted';
-        default: return 'bg-muted-foreground';
+        case 'for': return 'bg-background border-4 border-success';
+        case 'against': return 'bg-background border-4 border-destructive';
+        case 'abstain': return 'bg-background border-4 border-muted-foreground';
+        default: return 'bg-background border-2 border-muted';
       }
     }
-    return 'bg-muted-foreground';
+    return 'bg-background border-2 border-muted';
   };
 
   const getStatusMessage = () => {

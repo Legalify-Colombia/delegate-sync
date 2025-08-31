@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Newspaper } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,21 +62,21 @@ export function Header() {
           {profile && (
             <div className="text-sm text-muted-foreground hidden sm:block">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{profile.full_name}</span>
+                <span className="font-medium text-foreground">{profile.full_name}</span>
                 {profile.role === 'delegate' && countryInfo && (
                   <>
                     <span className="mx-1">•</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-2">
                       {countryInfo.flag ? (
                         <img 
                           src={countryInfo.flag} 
                           alt={`Bandera de ${countryInfo.name}`}
-                          className="w-4 h-3 object-cover rounded-sm"
+                          className="w-6 h-4 object-cover rounded-sm border border-border"
                         />
                       ) : (
                         <span className="text-base">🏳️</span>
                       )}
-                      <span>{countryInfo.name}</span>
+                      <span className="font-medium text-foreground">{countryInfo.name}</span>
                     </span>
                   </>
                 )}
@@ -86,20 +87,29 @@ export function Header() {
           )}
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Mi Cuenta</span>
+        <div className="flex items-center gap-2">
+          <Link to="/news">
+            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+              <Newspaper className="h-4 w-4" />
+              <span className="hidden sm:inline">Noticias</span>
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={signOut} className="text-destructive">
-              <LogOut className="h-4 w-4 mr-2" />
-              Cerrar Sesión
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Link>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Mi Cuenta</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="h-4 w-4 mr-2" />
+                Cerrar Sesión
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );
