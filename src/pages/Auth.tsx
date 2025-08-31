@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Scale, ShieldCheck, Zap, Users } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 export default function Auth() {
   // --- Toda tu lógica original se mantiene intacta ---
@@ -69,10 +70,7 @@ export default function Auth() {
         {/* Columna Izquierda: Información y Características */}
         <div className="hidden lg:block space-y-8 animate-[fade-in-up_1s_ease-out]">
           <div className="flex items-center space-x-3">
-            <div className="bg-white p-2 rounded-lg shadow-sm">
-                <Scale className="h-8 w-8 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">The Resolution Hub</h1>
+            <Logo size="xl" />
           </div>
           <div className="space-y-6">
             <div className="flex items-start space-x-4 p-4 rounded-xl transition-all duration-300 hover:bg-white/60">

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/logo';
 import { useAuth } from '@/hooks/useAuth';
 import { LogOut, User } from 'lucide-react';
 import {
@@ -28,9 +29,9 @@ export function Header() {
     <header className="border-b bg-card">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center space-x-3">
-          <h1 className="text-2xl font-bold text-primary">MUN Manager</h1>
+          <Logo size="md" />
           {profile && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground hidden sm:block">
               <span className="font-medium">{profile.full_name}</span>
               <span className="mx-2">•</span>
               <span>{getRoleDisplay(profile.role)}</span>

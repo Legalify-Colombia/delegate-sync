@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/useNotifications';
+import { Logo } from '@/components/ui/logo';
 
 interface DashboardHeaderProps {
   eventName?: string;
 }
 
-export function DashboardHeader({ eventName = "The Resolution Hub" }: DashboardHeaderProps) {
+export function DashboardHeader({ eventName }: DashboardHeaderProps) {
   const { profile, signOut } = useAuth();
   const [isProfileOpen, setProfileOpen] = useState(false);
   const [isNotificationsOpen, setNotificationsOpen] = useState(false);
@@ -24,9 +25,12 @@ export function DashboardHeader({ eventName = "The Resolution Hub" }: DashboardH
     <header className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Event Name */}
+          {/* Logo */}
           <div className="flex items-center">
-            <span className="font-bold text-lg text-primary">{eventName}</span>
+            <Logo size="md" />
+            {eventName && (
+              <span className="ml-3 font-medium text-muted-foreground hidden sm:block">{eventName}</span>
+            )}
           </div>
 
           {/* Notifications and Profile */}

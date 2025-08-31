@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth'; // Se restaura la conexión con tu hook original.
 import { Scale, Users, FileText, Vote, Github, Twitter, Linkedin } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 const Index = () => {
     // Se mantiene la lógica de autenticación original
@@ -23,9 +24,8 @@ const Index = () => {
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm">
                 <div className="container mx-auto px-4">
                     <div className="flex items-center justify-between h-16 border-b border-gray-200">
-                        <div className="flex items-center space-x-2">
-                            <Scale className="text-blue-600" />
-                            <a href="#" className="text-xl font-bold text-gray-900">The Resolution Hub</a>
+                        <div className="flex items-center">
+                            <Logo size="md" />
                         </div>
                         <div className="flex items-center space-x-6">
                             <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-gray-600">
@@ -120,9 +120,8 @@ const Index = () => {
                 <div className="container mx-auto px-4 py-12">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                         <div className="md:col-span-1">
-                            <div className="flex items-center space-x-2 mb-4">
-                                <Scale className="text-blue-600" />
-                                <span className="text-lg font-bold text-gray-900">The Resolution Hub</span>
+                            <div className="flex items-center mb-4">
+                                <Logo size="md" />
                             </div>
                             <p className="text-sm text-gray-600">Suscríbete para recibir noticias y actualizaciones.</p>
                             <form className="mt-4 flex">
@@ -157,7 +156,7 @@ const Index = () => {
                         </div>
                     </div>
                     <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p>&copy; 2024 The Resolution Hub. Todos los derechos reservados.</p>
+                        <p>&copy; 2024 Resolution Hub - Legalify Colombia. Todos los derechos reservados.</p>
                         <div className="flex space-x-4 mt-4 md:mt-0">
                             <a href="#" className="hover:text-gray-900"><Github size={20} /></a>
                             <a href="#" className="hover:text-gray-900"><Twitter size={20} /></a>
