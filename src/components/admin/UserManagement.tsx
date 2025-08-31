@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,19 +19,56 @@ interface Profile {
   created_at: string;
 }
 
+interface Committee {
+  id: string;
+  name: string;
+}
+
+interface Country {
+  id: string;
+  name: string;
+}
+
+interface UserFormData {
+  full_name: string;
+  email: string;
+  password: string;
+  role: string;
+  committee_id: string;
+  country_id: string;
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<Profile[]>([]);
+  const [committees, setCommittees] = useState<Committee[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [formData, setFormData] = useState<UserFormData>({
+    full_name: '',
+    email: '',
+    password: '',
+    role: 'delegate',
+    committee_id: '',
+    country_id: ''
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
+    fetchCommittees();
+    fetchCountries();
   }, []);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select(`
+        *,
+        countries(name),
+        committees(name)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -40,6 +81,144 @@ export default function UserManagement() {
       setUsers(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchCommittees = async () => {
+    const { data } = await supabase
+      .from('committees')
+      .select('id, name')
+      .order('name');
+    setCommittees(data || []);
+  };
+
+  const fetchCountries = async () => {
+    const { data } = await supabase
+      .from('countries')
+      .select('id, name')
+      .order('name');
+    setCountries(data || []);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.full_name.trim() || !formData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Nombre y email son obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (editingUser) {
+        // Update existing user
+        const updateData: any = {
+          full_name: formData.full_name.trim(),
+          role: formData.role,
+        };
+
+        if (formData.committee_id) updateData.committee_id = formData.committee_id;
+        if (formData.country_id) updateData.country_id = formData.country_id;
+
+        const { error } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', editingUser.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Éxito",
+          description: "Usuario actualizado correctamente",
+        });
+      } else {
+        // Create new user via auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email.trim(),
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.full_name.trim(),
+              role: formData.role,
+              committee_id: formData.committee_id || null,
+              country_id: formData.country_id || null,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+        
+        toast({
+          title: "Éxito",
+          description: "Usuario creado correctamente",
+        });
+      }
+
+      setIsDialogOpen(false);
+      setEditingUser(null);
+      setFormData({
+        full_name: '',
+        email: '',
+        password: '',
+        role: 'delegate',
+        committee_id: '',
+        country_id: ''
+      });
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al guardar el usuario",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (user: Profile) => {
+    setEditingUser(user);
+    setFormData({
+      full_name: user.full_name,
+      email: '', // Don't pre-fill email for security
+      password: '',
+      role: user.role,
+      committee_id: user.committee_id || '',
+      country_id: user.country_id || ''
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este usuario?')) return;
+
+    const { error } = await supabase.auth.admin.deleteUser(id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Error al eliminar el usuario",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Éxito",
+        description: "Usuario eliminado correctamente",
+      });
+      fetchUsers();
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      full_name: '',
+      email: '',
+      password: '',
+      role: 'delegate',
+      committee_id: '',
+      country_id: ''
+    });
+    setEditingUser(null);
   };
 
   const getRoleDisplay = (role: string) => {
@@ -80,10 +259,122 @@ export default function UserManagement() {
             <CardTitle>Gestión de Usuarios</CardTitle>
             <CardDescription>Administra los usuarios del sistema MUN</CardDescription>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Usuario
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Usuario
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingUser ? 'Editar Usuario' : 'Agregar Nuevo Usuario'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingUser ? 'Modifica los datos del usuario' : 'Ingresa los datos del nuevo usuario'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="full_name">Nombre Completo</Label>
+                  <Input
+                    id="full_name"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    placeholder="Juan Pérez"
+                    required
+                  />
+                </div>
+                {!editingUser && (
+                  <>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="juan@ejemplo.com"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Contraseña</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="Mínimo 6 caracteres"
+                        minLength={6}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <Label htmlFor="role">Rol</Label>
+                  <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="secretary_general">Secretario General</SelectItem>
+                      <SelectItem value="committee_secretary">Secretario de Comité</SelectItem>
+                      <SelectItem value="communications_secretary">Secretario de Comunicaciones</SelectItem>
+                      <SelectItem value="delegate">Delegado</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="press">Prensa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(formData.role === 'delegate' || formData.role === 'committee_secretary') && (
+                  <div>
+                    <Label htmlFor="committee">Comité</Label>
+                    <Select value={formData.committee_id} onValueChange={(value) => setFormData({ ...formData, committee_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un comité" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {committees.map((committee) => (
+                          <SelectItem key={committee.id} value={committee.id}>
+                            {committee.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {formData.role === 'delegate' && (
+                  <div>
+                    <Label htmlFor="country">País</Label>
+                    <Select value={formData.country_id} onValueChange={(value) => setFormData({ ...formData, country_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un país" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countries.map((country) => (
+                          <SelectItem key={country.id} value={country.id}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button type="submit">
+                    {editingUser ? 'Actualizar' : 'Crear'} Usuario
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent>
@@ -105,10 +396,19 @@ export default function UserManagement() {
                 </p>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleEdit(user)}
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" className="text-destructive">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(user.id)}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

@@ -220,7 +220,7 @@ export default function PublicDebateView() {
     loadInitialData();
   }, [committeeId]);
 
-  // Timer de sesión
+  // Timer de sesión - solo cuando el comité está activo
   useEffect(() => {
     if (committee?.current_status === 'active') {
       const interval = setInterval(() => setSessionTime(t => t + 1), 1000);
@@ -228,13 +228,24 @@ export default function PublicDebateView() {
     }
   }, [committee?.current_status]);
 
-  // Timer del orador
+  // Timer del orador - basado en tiempo real
   useEffect(() => {
-    if (currentSpeaker && speakerTimeLeft > 0) {
-      const timer = setInterval(() => setSpeakerTimeLeft(t => Math.max(0, t - 1)), 1000);
+    if (currentSpeaker && currentSpeaker.started_at && currentSpeaker.time_allocated) {
+      const updateTimer = () => {
+        const startTime = new Date(currentSpeaker.started_at!).getTime();
+        const now = Date.now();
+        const elapsed = Math.floor((now - startTime) / 1000);
+        const remaining = Math.max(0, currentSpeaker.time_allocated! - elapsed);
+        setSpeakerTimeLeft(remaining);
+      };
+
+      updateTimer(); // Actualizar inmediatamente
+      const timer = setInterval(updateTimer, 1000);
       return () => clearInterval(timer);
+    } else {
+      setSpeakerTimeLeft(0);
     }
-  }, [currentSpeaker, speakerTimeLeft]);
+  }, [currentSpeaker]);
 
   // Suscripciones en tiempo real
   useEffect(() => {
@@ -399,7 +410,7 @@ export default function PublicDebateView() {
                   currentSpeaker?.delegate_id === delegate.id 
                     ? 'ring-4 ring-success' 
                     : 'ring-2 ring-warning'
-                }`}
+                }`} 
               />
               <span className="text-sm font-semibold text-muted-foreground mt-2 text-center w-24">
                 {delegate.country_name}

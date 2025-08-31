@@ -4,9 +4,10 @@ import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Building, Settings, Activity } from 'lucide-react';
+import { Users, Building, Settings, Activity, Globe } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
 import CommitteeManagement from '@/components/admin/CommitteeManagement';
+import CountryManagement from '@/components/admin/CountryManagement';
 import SystemOverview from '@/components/admin/SystemOverview';
 
 export default function AdminDashboard() {
@@ -37,6 +38,7 @@ export default function AdminDashboard() {
                   { id: 'overview', label: 'Resumen', icon: Activity },
                   { id: 'users', label: 'Usuarios', icon: Users },
                   { id: 'committees', label: 'Comités', icon: Building },
+                  { id: 'countries', label: 'Países', icon: Globe },
                   { id: 'settings', label: 'Configuración', icon: Settings }
                 ].map(tab => (
                   <button
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
                 {activeTab === 'overview' && <SystemOverview />}
                 {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'committees' && <CommitteeManagement />}
+                {activeTab === 'countries' && <CountryManagement />}
                 {activeTab === 'settings' && (
                   <div>
                     <h3 className="text-xl font-bold text-slate-800 mb-4">Configuración del Sistema</h3>

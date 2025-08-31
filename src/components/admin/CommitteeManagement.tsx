@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Play, Pause, Vote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,9 +19,17 @@ interface Committee {
   created_at: string;
 }
 
+interface CommitteeFormData {
+  name: string;
+  topic: string;
+}
+
 export default function CommitteeManagement() {
   const [committees, setCommittees] = useState<Committee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCommittee, setEditingCommittee] = useState<Committee | null>(null);
+  const [formData, setFormData] = useState<CommitteeFormData>({ name: '', topic: '' });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,12 +75,103 @@ export default function CommitteeManagement() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.topic.trim()) {
+      toast({
+        title: "Error",
+        description: "Todos los campos son obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (editingCommittee) {
+        const { error } = await supabase
+          .from('committees')
+          .update({
+            name: formData.name.trim(),
+            topic: formData.topic.trim(),
+          })
+          .eq('id', editingCommittee.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Éxito",
+          description: "Comité actualizado correctamente",
+        });
+      } else {
+        const { error } = await supabase
+          .from('committees')
+          .insert({
+            name: formData.name.trim(),
+            topic: formData.topic.trim(),
+          });
+
+        if (error) throw error;
+        
+        toast({
+          title: "Éxito",
+          description: "Comité creado correctamente",
+        });
+      }
+
+      setIsDialogOpen(false);
+      setEditingCommittee(null);
+      setFormData({ name: '', topic: '' });
+      fetchCommittees();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al guardar el comité",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (committee: Committee) => {
+    setEditingCommittee(committee);
+    setFormData({ name: committee.name, topic: committee.topic });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este comité?')) return;
+
+    const { error } = await supabase
+      .from('committees')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Error al eliminar el comité",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Éxito",
+        description: "Comité eliminado correctamente",
+      });
+      fetchCommittees();
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ name: '', topic: '' });
+    setEditingCommittee(null);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'voting': return 'bg-blue-500';
-      case 'paused': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
+      case 'active': return 'bg-success';
+      case 'voting': return 'bg-primary';
+      case 'paused': return 'bg-warning';
+      default: return 'bg-muted';
     }
   };
 
@@ -93,10 +196,55 @@ export default function CommitteeManagement() {
             <CardTitle>Gestión de Comités</CardTitle>
             <CardDescription>Administra los comités y controla sus estados</CardDescription>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Comité
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Comité
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCommittee ? 'Editar Comité' : 'Agregar Nuevo Comité'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingCommittee ? 'Modifica los datos del comité' : 'Ingresa los datos del nuevo comité'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Nombre del Comité</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="ej: Consejo de Seguridad"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="topic">Tema a Debatir</Label>
+                  <Textarea
+                    id="topic"
+                    value={formData.topic}
+                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                    placeholder="ej: La crisis climática como amenaza a la paz y seguridad internacional"
+                    required
+                    rows={3}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="submit">
+                    {editingCommittee ? 'Actualizar' : 'Crear'} Comité
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent>
@@ -138,10 +286,19 @@ export default function CommitteeManagement() {
                   >
                     <Vote className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEdit(committee)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(committee.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
