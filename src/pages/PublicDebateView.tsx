@@ -390,14 +390,14 @@ export default function PublicDebateView() {
 
     // Canal unificado para todos los cambios de tiempo real
     const realtimeChannel = supabase
-      .channel(`committee-${committeeId}-realtime`)
+      .channel(`committee-${committeeId}-public-realtime`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'committees',
         filter: `id=eq.${committeeId}`
       }, (payload) => {
-        console.log('Committee update:', payload);
+        console.log('Public view - Committee update:', payload);
         setCommittee(payload.new as Committee);
       })
       .on('postgres_changes', {
@@ -406,108 +406,111 @@ export default function PublicDebateView() {
         table: 'speaking_queue',
         filter: `committee_id=eq.${committeeId}`
       }, async (payload) => {
-        console.log('Speaking queue update:', payload);
+        console.log('Public view - Speaking queue update:', payload);
         
-        // Recargar orador actual y cola sin joins FK
-        const { data: speakerQueueData } = await supabase
-          .from('speaking_queue')
-          .select('delegate_id, status, started_at, time_allocated, position')
-          .eq('committee_id', committeeId)
-          .eq('status', 'speaking')
-          .maybeSingle();
+        // Recargar inmediatamente todos los datos del orador y cola
+        try {
+          // Cargar orador actual
+          const { data: speakerQueueData } = await supabase
+            .from('speaking_queue')
+            .select('delegate_id, status, started_at, time_allocated, position')
+            .eq('committee_id', committeeId)
+            .eq('status', 'speaking')
+            .maybeSingle();
 
-        const { data: queueData } = await supabase
-          .from('speaking_queue')
-          .select('delegate_id, status, position')
-          .eq('committee_id', committeeId)
-          .eq('status', 'pending')
-          .order('position');
+          if (speakerQueueData) {
+            const { data: speakerProfile } = await supabase
+              .from('profiles')
+              .select('full_name, Photo_url, "Entidad que representa", country_id')
+              .eq('id', speakerQueueData.delegate_id)
+              .single();
 
-        // Cargar orador actual con perfil
-        if (speakerQueueData) {
-          const { data: speakerProfile } = await supabase
-            .from('profiles')
-            .select('full_name, Photo_url, "Entidad que representa", country_id')
-            .eq('id', speakerQueueData.delegate_id)
-            .single();
-
-          if (speakerProfile) {
-            let countryName = 'Sin país';
-            if (speakerProfile.country_id) {
-              const { data: country } = await supabase
-                .from('countries')
-                .select('name')
-                .eq('id', speakerProfile.country_id)
-                .single();
-              countryName = country?.name || 'Sin país';
-            }
-
-            setCurrentSpeaker({
-              delegate_id: speakerQueueData.delegate_id,
-              status: speakerQueueData.status,
-              started_at: speakerQueueData.started_at,
-              time_allocated: speakerQueueData.time_allocated,
-              position: speakerQueueData.position,
-              profiles: {
-                full_name: speakerProfile.full_name,
-                country_name: countryName,
-                photo_url: speakerProfile.Photo_url,
-                'Entidad que representa': speakerProfile['Entidad que representa'] || ''
-              }
-            });
-          }
-        } else {
-          setCurrentSpeaker(null);
-        }
-
-        // Cargar cola con perfiles
-        if (queueData && queueData.length > 0) {
-          const queueWithProfiles = await Promise.all(
-            queueData.map(async (item: any) => {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, Photo_url, "Entidad que representa", country_id')
-                .eq('id', item.delegate_id)
-                .single();
-
+            if (speakerProfile) {
               let countryName = 'Sin país';
-              if (profile?.country_id) {
+              if (speakerProfile.country_id) {
                 const { data: country } = await supabase
                   .from('countries')
                   .select('name')
-                  .eq('id', profile.country_id)
+                  .eq('id', speakerProfile.country_id)
                   .single();
                 countryName = country?.name || 'Sin país';
               }
 
-              return {
-                delegate_id: item.delegate_id,
-                status: item.status,
-                position: item.position,
+              setCurrentSpeaker({
+                delegate_id: speakerQueueData.delegate_id,
+                status: speakerQueueData.status,
+                started_at: speakerQueueData.started_at,
+                time_allocated: speakerQueueData.time_allocated,
+                position: speakerQueueData.position,
                 profiles: {
-                  full_name: profile?.full_name || '',
+                  full_name: speakerProfile.full_name,
                   country_name: countryName,
-                  photo_url: profile?.Photo_url,
-                  'Entidad que representa': profile?.['Entidad que representa'] || ''
+                  photo_url: speakerProfile.Photo_url,
+                  'Entidad que representa': speakerProfile['Entidad que representa'] || ''
                 }
-              };
-            })
-          );
-          setSpeakingQueue(queueWithProfiles);
-        } else {
-          setSpeakingQueue([]);
+              });
+            }
+          } else {
+            setCurrentSpeaker(null);
+          }
+
+          // Cargar cola pendiente
+          const { data: queueData } = await supabase
+            .from('speaking_queue')
+            .select('delegate_id, status, position')
+            .eq('committee_id', committeeId)
+            .eq('status', 'pending')
+            .order('position');
+
+          if (queueData && queueData.length > 0) {
+            const queueWithProfiles = await Promise.all(
+              queueData.map(async (item: any) => {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('full_name, Photo_url, "Entidad que representa", country_id')
+                  .eq('id', item.delegate_id)
+                  .single();
+
+                let countryName = 'Sin país';
+                if (profile?.country_id) {
+                  const { data: country } = await supabase
+                    .from('countries')
+                    .select('name')
+                    .eq('id', profile.country_id)
+                    .single();
+                  countryName = country?.name || 'Sin país';
+                }
+
+                return {
+                  delegate_id: item.delegate_id,
+                  status: item.status,
+                  position: item.position,
+                  profiles: {
+                    full_name: profile?.full_name || '',
+                    country_name: countryName,
+                    photo_url: profile?.Photo_url,
+                    'Entidad que representa': profile?.['Entidad que representa'] || ''
+                  }
+                };
+              })
+            );
+            setSpeakingQueue(queueWithProfiles);
+          } else {
+            setSpeakingQueue([]);
+          }
+        } catch (error) {
+          console.error('Error updating public view data:', error);
         }
       })
-      // Votos - actualizar según estado del comité
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'votes',
         filter: `committee_id=eq.${committeeId}`
       }, async () => {
-        console.log('Votes update');
+        console.log('Public view - Votes update');
         
-        // Solo actualizar votos si el comité está en votación
+        // Recargar el estado del comité para verificar si hay votación activa
         const { data: currentCommittee } = await supabase
           .from('committees')
           .select('current_status')
@@ -541,10 +544,14 @@ export default function PublicDebateView() {
         }
       })
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+        console.log('Public view realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Public view successfully subscribed to realtime updates');
+        }
       });
 
     return () => {
+      console.log('Cleaning up public view realtime subscription');
       supabase.removeChannel(realtimeChannel);
     };
   }, [committeeId]);
