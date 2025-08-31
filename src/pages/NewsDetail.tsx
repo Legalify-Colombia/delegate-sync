@@ -109,7 +109,7 @@ export default function NewsDetail() {
               </Avatar>
               <span>{author?.full_name ?? 'Desconocido'}</span>
               {(!author || !author.full_name) && (
-                <span className="ml-2 text-xs text-red-500">author_id: {article.author_id || 'No disponible'}</span>
+                <span className="ml-2 text-xs text-red-500">Por: author_id: {article.author_id || 'No disponible'}</span>
               )}
               <span className="mx-2">&middot;</span>
               <span>{new Date(article.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
