@@ -23,10 +23,13 @@ export function Header() {
             .from('countries')
             .select('name, flag')
             .eq('id', profile.country_id)
-            .single();
+            .maybeSingle();
           
           if (country && !error) {
-            setCountryInfo(country);
+            setCountryInfo({
+              name: country.name,
+              flag: country.flag || '🏳️'
+            });
           }
         } catch (err) {
           console.error('Error fetching country info:', err);

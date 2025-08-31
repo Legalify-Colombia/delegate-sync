@@ -95,6 +95,48 @@ export type Database = {
         }
         Relationships: []
       }
+      amonestaciones: {
+        Row: {
+          country_id: string
+          created_at: string
+          delegate_id: string
+          id: string
+          motivo: string
+          secretary_id: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          delegate_id: string
+          id?: string
+          motivo: string
+          secretary_id: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          delegate_id?: string
+          id?: string
+          motivo?: string
+          secretary_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_delegate_profile"
+            columns: ["delegate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_secretary_profile"
+            columns: ["secretary_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           author_id: string
@@ -216,18 +258,21 @@ export type Database = {
         Row: {
           code: string
           created_at: string | null
+          flag: string | null
           id: string
           name: string
         }
         Insert: {
           code: string
           created_at?: string | null
+          flag?: string | null
           id?: string
           name: string
         }
         Update: {
           code?: string
           created_at?: string | null
+          flag?: string | null
           id?: string
           name?: string
         }
