@@ -10,6 +10,9 @@ interface Committee {
   topic: string;
   current_status: string;
   current_timer_end?: string;
+  session_started_at?: string;
+  session_accumulated_seconds: number;
+  current_timer_remaining_seconds?: number;
 }
 
 interface Delegate {
@@ -31,6 +34,7 @@ interface SpeakingQueue {
   status: string;
   started_at?: string;
   time_allocated?: number;
+  position?: number;
   profiles: {
     full_name: string;
     country_name: string;
@@ -111,9 +115,11 @@ export default function PublicDebateView() {
   const [delegates, setDelegates] = useState<Delegate[]>([]);
   const [votes, setVotes] = useState<{ [key: string]: string }>({});
   const [currentSpeaker, setCurrentSpeaker] = useState<SpeakingQueue | null>(null);
+  const [speakingQueue, setSpeakingQueue] = useState<SpeakingQueue[]>([]);
   const [sessionTime, setSessionTime] = useState(0);
   const [speakerTimeLeft, setSpeakerTimeLeft] = useState(0);
   const [isVotingActive, setIsVotingActive] = useState(false);
+  const [voteCount, setVoteCount] = useState({ for: 0, against: 0, abstain: 0 });
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -174,7 +180,7 @@ export default function PublicDebateView() {
         setVotes(voteMap);
       }
 
-      // Cargar orador actual
+      // Cargar orador actual y cola
       const { data: speakerData } = await supabase
         .from('speaking_queue')
         .select(`
@@ -182,6 +188,7 @@ export default function PublicDebateView() {
           status,
           started_at,
           time_allocated,
+          position,
           profiles!speaking_queue_delegate_id_fkey (
             full_name,
             Photo_url,
@@ -191,7 +198,24 @@ export default function PublicDebateView() {
         `)
         .eq('committee_id', committeeId)
         .eq('status', 'speaking')
-        .single();
+        .maybeSingle();
+
+      const { data: queueData } = await supabase
+        .from('speaking_queue')
+        .select(`
+          delegate_id,
+          status,
+          position,
+          profiles!speaking_queue_delegate_id_fkey (
+            full_name,
+            Photo_url,
+            "Entidad que representa",
+            countries!profiles_country_id_fkey (name)
+          )
+        `)
+        .eq('committee_id', committeeId)
+        .eq('status', 'pending')
+        .order('position');
 
       if (speakerData) {
         const formattedSpeaker = {
@@ -199,6 +223,7 @@ export default function PublicDebateView() {
           status: (speakerData as any).status,
           started_at: (speakerData as any).started_at,
           time_allocated: (speakerData as any).time_allocated,
+          position: (speakerData as any).position,
           profiles: {
             full_name: (speakerData as any).profiles?.full_name || '',
             country_name: (speakerData as any).profiles?.countries?.name || '',
@@ -207,45 +232,87 @@ export default function PublicDebateView() {
           }
         };
         setCurrentSpeaker(formattedSpeaker);
-        
-        if ((speakerData as any).started_at && (speakerData as any).time_allocated) {
-          const startTime = new Date((speakerData as any).started_at).getTime();
-          const now = Date.now();
-          const elapsed = Math.floor((now - startTime) / 1000);
-          setSpeakerTimeLeft(Math.max(0, (speakerData as any).time_allocated - elapsed));
-        }
+      }
+
+      if (queueData) {
+        const formattedQueue = queueData.map((item: any) => ({
+          delegate_id: item.delegate_id,
+          status: item.status,
+          position: item.position,
+          profiles: {
+            full_name: item.profiles?.full_name || '',
+            country_name: item.profiles?.countries?.name || '',
+            photo_url: item.profiles?.Photo_url,
+            'Entidad que representa': item.profiles?.['Entidad que representa'] || ''
+          }
+        }));
+        setSpeakingQueue(formattedQueue);
+      }
+
+      // Actualizar conteos de votos
+      if (votesData && votesData.length > 0) {
+        const counts = { for: 0, against: 0, abstain: 0 };
+        votesData.forEach(vote => {
+          counts[vote.vote_type as keyof typeof counts]++;
+        });
+        setVoteCount(counts);
       }
     };
 
     loadInitialData();
   }, [committeeId]);
 
-  // Timer de sesión - solo cuando el comité está activo
+  // Timer de sesión - basado en datos de Supabase
   useEffect(() => {
-    if (committee?.current_status === 'active') {
-      const interval = setInterval(() => setSessionTime(t => t + 1), 1000);
+    if (!committee) return;
+
+    const updateSessionTime = () => {
+      let totalSeconds = committee.session_accumulated_seconds || 0;
+      
+      if (committee.current_status === 'active' && committee.session_started_at) {
+        const startTime = new Date(committee.session_started_at).getTime();
+        const now = Date.now();
+        const currentSessionSeconds = Math.floor((now - startTime) / 1000);
+        totalSeconds += currentSessionSeconds;
+      }
+      
+      setSessionTime(totalSeconds);
+    };
+
+    updateSessionTime();
+    
+    if (committee.current_status === 'active' && committee.session_started_at) {
+      const interval = setInterval(updateSessionTime, 1000);
       return () => clearInterval(interval);
     }
-  }, [committee?.current_status]);
+  }, [committee]);
 
-  // Timer del orador - basado en tiempo real
+  // Timer del orador - basado en temporizador del comité
   useEffect(() => {
-    if (currentSpeaker && currentSpeaker.started_at && currentSpeaker.time_allocated) {
-      const updateTimer = () => {
-        const startTime = new Date(currentSpeaker.started_at!).getTime();
-        const now = Date.now();
-        const elapsed = Math.floor((now - startTime) / 1000);
-        const remaining = Math.max(0, currentSpeaker.time_allocated! - elapsed);
-        setSpeakerTimeLeft(remaining);
-      };
+    if (!committee) return;
 
-      updateTimer(); // Actualizar inmediatamente
-      const timer = setInterval(updateTimer, 1000);
+    const updateSpeakerTimer = () => {
+      if (committee.current_timer_end) {
+        // Temporizador activo
+        const endTime = new Date(committee.current_timer_end).getTime();
+        const now = Date.now();
+        const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+        setSpeakerTimeLeft(remaining);
+      } else if (committee.current_timer_remaining_seconds) {
+        // Temporizador pausado
+        setSpeakerTimeLeft(committee.current_timer_remaining_seconds);
+      } else {
+        setSpeakerTimeLeft(0);
+      }
+    };
+
+    updateSpeakerTimer();
+
+    if (committee.current_timer_end) {
+      const timer = setInterval(updateSpeakerTimer, 1000);
       return () => clearInterval(timer);
-    } else {
-      setSpeakerTimeLeft(0);
     }
-  }, [currentSpeaker]);
+  }, [committee]);
 
   // Suscripciones en tiempo real
   useEffect(() => {
@@ -273,44 +340,75 @@ export default function PublicDebateView() {
         table: 'speaking_queue',
         filter: `committee_id=eq.${committeeId}`
       }, async (payload) => {
-        if (payload.eventType === 'UPDATE' && (payload.new as any).status === 'speaking') {
-          // Cargar datos completos del nuevo orador
-          const { data: speakerData } = await supabase
-            .from('speaking_queue')
-            .select(`
-              delegate_id,
-              status,
-              started_at,
-              time_allocated,
-              profiles!speaking_queue_delegate_id_fkey (
-                full_name,
-                Photo_url,
-                "Entidad que representa",
-                countries!profiles_country_id_fkey (name)
-              )
-            `)
-            .eq('id', (payload.new as any).id)
-            .single();
+        // Recargar orador actual y cola
+        const { data: speakerData } = await supabase
+          .from('speaking_queue')
+          .select(`
+            delegate_id,
+            status,
+            started_at,
+            time_allocated,
+            position,
+            profiles!speaking_queue_delegate_id_fkey (
+              full_name,
+              Photo_url,
+              "Entidad que representa",
+              countries!profiles_country_id_fkey (name)
+            )
+          `)
+          .eq('committee_id', committeeId)
+          .eq('status', 'speaking')
+          .maybeSingle();
 
-          if (speakerData) {
-            const formattedSpeaker = {
-              delegate_id: (speakerData as any).delegate_id,
-              status: (speakerData as any).status,
-              started_at: (speakerData as any).started_at,
-              time_allocated: (speakerData as any).time_allocated,
-              profiles: {
-                full_name: (speakerData as any).profiles?.full_name || '',
-                country_name: (speakerData as any).profiles?.countries?.name || '',
-                photo_url: (speakerData as any).profiles?.Photo_url,
-                'Entidad que representa': (speakerData as any).profiles?.['Entidad que representa'] || ''
-              }
-            };
-            setCurrentSpeaker(formattedSpeaker);
-            setSpeakerTimeLeft((speakerData as any).time_allocated || 0);
-          }
-        } else if (payload.eventType === 'UPDATE' && (payload.new as any).status === 'completed') {
+        const { data: queueData } = await supabase
+          .from('speaking_queue')
+          .select(`
+            delegate_id,
+            status,
+            position,
+            profiles!speaking_queue_delegate_id_fkey (
+              full_name,
+              Photo_url,
+              "Entidad que representa",
+              countries!profiles_country_id_fkey (name)
+            )
+          `)
+          .eq('committee_id', committeeId)
+          .eq('status', 'pending')
+          .order('position');
+
+        if (speakerData) {
+          const formattedSpeaker = {
+            delegate_id: (speakerData as any).delegate_id,
+            status: (speakerData as any).status,
+            started_at: (speakerData as any).started_at,
+            time_allocated: (speakerData as any).time_allocated,
+            position: (speakerData as any).position,
+            profiles: {
+              full_name: (speakerData as any).profiles?.full_name || '',
+              country_name: (speakerData as any).profiles?.countries?.name || '',
+              photo_url: (speakerData as any).profiles?.Photo_url,
+              'Entidad que representa': (speakerData as any).profiles?.['Entidad que representa'] || ''
+            }
+          };
+          setCurrentSpeaker(formattedSpeaker);
+        } else {
           setCurrentSpeaker(null);
-          setSpeakerTimeLeft(0);
+        }
+
+        if (queueData) {
+          const formattedQueue = queueData.map((item: any) => ({
+            delegate_id: item.delegate_id,
+            status: item.status,
+            position: item.position,
+            profiles: {
+              full_name: item.profiles?.full_name || '',
+              country_name: item.profiles?.countries?.name || '',
+              photo_url: item.profiles?.Photo_url,
+              'Entidad que representa': item.profiles?.['Entidad que representa'] || ''
+            }
+          }));
+          setSpeakingQueue(formattedQueue);
         }
       })
       .subscribe();
@@ -333,13 +431,17 @@ export default function PublicDebateView() {
         if (votesData && votesData.length > 0) {
           setIsVotingActive(true);
           const voteMap: { [key: string]: string } = {};
+          const counts = { for: 0, against: 0, abstain: 0 };
           votesData.forEach(vote => {
             voteMap[vote.user_id] = vote.vote_type;
+            counts[vote.vote_type as keyof typeof counts]++;
           });
           setVotes(voteMap);
+          setVoteCount(counts);
         } else {
           setIsVotingActive(false);
           setVotes({});
+          setVoteCount({ for: 0, against: 0, abstain: 0 });
         }
       })
       .subscribe();
@@ -377,12 +479,24 @@ export default function PublicDebateView() {
   const otherMembersCount = otherMembers.length;
   const circleSize = Math.max(40, 110 - otherMembersCount * 5);
 
+  const getStatusMessage = () => {
+    switch (committee?.current_status) {
+      case 'active': return { text: 'DEBATE ACTIVO', color: 'text-success' };
+      case 'paused': return { text: 'DEBATE EN PAUSA', color: 'text-warning' };
+      case 'voting': return { text: 'VOTACIÓN EN CURSO', color: 'text-primary' };
+      default: return { text: 'COMITÉ INACTIVO', color: 'text-muted-foreground' };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col p-6 md:p-10 font-sans overflow-hidden">
       <header className="w-full mb-4 flex justify-between items-center">
         <div className="text-left">
           <h1 className="text-4xl font-bold tracking-tight">{committee.name}</h1>
           <p className="text-lg text-muted-foreground">{committee.topic}</p>
+          <div className={`text-sm font-bold mt-2 ${getStatusMessage().color}`}>
+            {getStatusMessage().text}
+          </div>
         </div>
         <div className="relative">
           <AnimatePresence mode="wait">
@@ -394,56 +508,111 @@ export default function PublicDebateView() {
         </div>
       </header>
 
-      <main className="flex-grow bg-card/20 rounded-2xl p-6 flex flex-col justify-center items-center">
-        <div className="flex justify-center gap-8 mb-8">
-          {permanentMembers.map(delegate => (
-            <motion.div 
-              key={delegate.id} 
-              initial={{ opacity: 0, y: -20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ delay: 0.1 * delegates.indexOf(delegate) }} 
-              className="flex flex-col items-center justify-center"
-            >
-              <div 
-                style={{ width: '64px', height: '64px' }}
-                className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ring-offset-4 ring-offset-background ${
-                  currentSpeaker?.delegate_id === delegate.id 
-                    ? 'ring-4 ring-success' 
-                    : 'ring-2 ring-warning'
-                }`} 
-              />
-              <span className="text-sm font-semibold text-muted-foreground mt-2 text-center w-24">
-                {delegate.country_name}
-              </span>
-            </motion.div>
-          ))}
-        </div>
-        
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-4">
-          {otherMembers.map(delegate => (
-            <motion.div 
-              key={delegate.id} 
-              initial={{ opacity: 0, y: 20 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              transition={{ delay: 0.05 * delegates.indexOf(delegate) }} 
-              className="flex flex-col items-center justify-center"
-            >
-              <div 
-                style={{ width: `${circleSize}px`, height: `${circleSize}px` }}
-                className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
-                  currentSpeaker?.delegate_id === delegate.id 
-                    ? 'ring-4 ring-offset-4 ring-offset-background ring-success' 
-                    : ''
-                }`}
-              />
-              <span 
-                style={{width: `${circleSize}px`}} 
-                className="text-xs text-muted-foreground mt-2 text-center truncate"
+      <main className="flex-grow bg-card/20 rounded-2xl p-6 flex">
+        {/* Panel izquierdo - Cola de oradores */}
+        <div className="w-80 pr-6">
+          <h3 className="text-xl font-bold mb-4 text-center">Cola de Oradores</h3>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {speakingQueue.map((speaker, index) => (
+              <motion.div
+                key={speaker.delegate_id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-center gap-3 bg-background/50 p-3 rounded-lg"
               >
-                {delegate.country_name}
-              </span>
-            </motion.div>
-          ))}
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                  {index + 1}
+                </div>
+                <img 
+                  src={speaker.profiles.photo_url || `https://placehold.co/40x40/E5E7EB/1F2937?text=${speaker.profiles.country_name.slice(0, 2)}`}
+                  alt={speaker.profiles.full_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{speaker.profiles.country_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{speaker.profiles.full_name}</p>
+                </div>
+              </motion.div>
+            ))}
+            {speakingQueue.length === 0 && (
+              <p className="text-center text-muted-foreground">No hay oradores en cola</p>
+            )}
+          </div>
+        </div>
+
+        {/* Panel central - Representación de delegados */}
+        <div className="flex-1 flex flex-col justify-center items-center">
+          {isVotingActive && (
+            <div className="mb-8 bg-primary/10 rounded-2xl p-6 text-center">
+              <h3 className="text-2xl font-bold text-primary mb-4">VOTACIÓN EN CURSO</h3>
+              <div className="flex justify-center gap-8">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-success">{voteCount.for}</div>
+                  <div className="text-sm text-muted-foreground">A Favor</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-destructive">{voteCount.against}</div>
+                  <div className="text-sm text-muted-foreground">En Contra</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-muted-foreground">{voteCount.abstain}</div>
+                  <div className="text-sm text-muted-foreground">Abstención</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-center gap-8 mb-8">
+            {permanentMembers.map(delegate => (
+              <motion.div 
+                key={delegate.id} 
+                initial={{ opacity: 0, y: -20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: 0.1 * delegates.indexOf(delegate) }} 
+                className="flex flex-col items-center justify-center"
+              >
+                <div 
+                  style={{ width: '64px', height: '64px' }}
+                  className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ring-offset-4 ring-offset-background ${
+                    currentSpeaker?.delegate_id === delegate.id 
+                      ? 'ring-4 ring-success' 
+                      : 'ring-2 ring-warning'
+                  }`} 
+                />
+                <span className="text-sm font-semibold text-muted-foreground mt-2 text-center w-24">
+                  {delegate.country_name}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-4">
+            {otherMembers.map(delegate => (
+              <motion.div 
+                key={delegate.id} 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: 0.05 * delegates.indexOf(delegate) }} 
+                className="flex flex-col items-center justify-center"
+              >
+                <div 
+                  style={{ width: `${circleSize}px`, height: `${circleSize}px` }}
+                  className={`rounded-full transition-all duration-500 ${getDelegateStyle(delegate)} ${
+                    currentSpeaker?.delegate_id === delegate.id 
+                      ? 'ring-4 ring-offset-4 ring-offset-background ring-success' 
+                      : ''
+                  }`}
+                />
+                <span 
+                  style={{width: `${circleSize}px`}} 
+                  className="text-xs text-muted-foreground mt-2 text-center truncate"
+                >
+                  {delegate.country_name}
+                </span>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </main>
 
