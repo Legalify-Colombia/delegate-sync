@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_items: {
+        Row: {
+          committee_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          position: number
+          started_at: string | null
+          status: string
+          time_allocated: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          committee_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          position?: number
+          started_at?: string | null
+          status?: string
+          time_allocated?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          committee_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          position?: number
+          started_at?: string | null
+          status?: string
+          time_allocated?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agenda_participations: {
+        Row: {
+          agenda_item_id: string
+          committee_id: string
+          created_at: string
+          delegate_id: string
+          ended_at: string | null
+          id: string
+          participation_type: string
+          started_at: string | null
+          time_used: number | null
+        }
+        Insert: {
+          agenda_item_id: string
+          committee_id: string
+          created_at?: string
+          delegate_id: string
+          ended_at?: string | null
+          id?: string
+          participation_type?: string
+          started_at?: string | null
+          time_used?: number | null
+        }
+        Update: {
+          agenda_item_id?: string
+          committee_id?: string
+          created_at?: string
+          delegate_id?: string
+          ended_at?: string | null
+          id?: string
+          participation_type?: string
+          started_at?: string | null
+          time_used?: number | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           author_id: string
@@ -433,6 +514,36 @@ export type Database = {
           },
         ]
       }
+      secretary_speaking: {
+        Row: {
+          committee_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          is_active: boolean | null
+          secretary_id: string
+          started_at: string | null
+        }
+        Insert: {
+          committee_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          secretary_id: string
+          started_at?: string | null
+        }
+        Update: {
+          committee_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          secretary_id?: string
+          started_at?: string | null
+        }
+        Relationships: []
+      }
       speaking_queue: {
         Row: {
           committee_id: string
@@ -563,25 +674,34 @@ export type Database = {
       }
       votes: {
         Row: {
+          agenda_item_id: string | null
           committee_id: string
           created_at: string | null
           id: string
           user_id: string
           vote_type: Database["public"]["Enums"]["vote_type"]
+          voting_round_id: string | null
+          voting_session_id: string | null
         }
         Insert: {
+          agenda_item_id?: string | null
           committee_id: string
           created_at?: string | null
           id?: string
           user_id: string
           vote_type: Database["public"]["Enums"]["vote_type"]
+          voting_round_id?: string | null
+          voting_session_id?: string | null
         }
         Update: {
+          agenda_item_id?: string | null
           committee_id?: string
           created_at?: string | null
           id?: string
           user_id?: string
           vote_type?: Database["public"]["Enums"]["vote_type"]
+          voting_round_id?: string | null
+          voting_session_id?: string | null
         }
         Relationships: [
           {
@@ -592,6 +712,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      voting_rounds: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          result: string | null
+          round_number: number
+          started_at: string | null
+          status: string
+          vetoed_by: string | null
+          votes_abstain: number | null
+          votes_against: number | null
+          votes_for: number | null
+          voting_session_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          result?: string | null
+          round_number: number
+          started_at?: string | null
+          status?: string
+          vetoed_by?: string | null
+          votes_abstain?: number | null
+          votes_against?: number | null
+          votes_for?: number | null
+          voting_session_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          result?: string | null
+          round_number?: number
+          started_at?: string | null
+          status?: string
+          vetoed_by?: string | null
+          votes_abstain?: number | null
+          votes_against?: number | null
+          votes_for?: number | null
+          voting_session_id?: string
+        }
+        Relationships: []
+      }
+      voting_sessions: {
+        Row: {
+          agenda_item_id: string | null
+          allow_abstention: boolean | null
+          allow_veto: boolean | null
+          committee_id: string
+          completed_at: string | null
+          created_at: string
+          current_round: number | null
+          description: string | null
+          id: string
+          majority_threshold: number | null
+          max_rounds: number | null
+          started_at: string | null
+          status: string
+          title: string
+          veto_members: string[] | null
+          voting_type: string
+        }
+        Insert: {
+          agenda_item_id?: string | null
+          allow_abstention?: boolean | null
+          allow_veto?: boolean | null
+          committee_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_round?: number | null
+          description?: string | null
+          id?: string
+          majority_threshold?: number | null
+          max_rounds?: number | null
+          started_at?: string | null
+          status?: string
+          title: string
+          veto_members?: string[] | null
+          voting_type?: string
+        }
+        Update: {
+          agenda_item_id?: string | null
+          allow_abstention?: boolean | null
+          allow_veto?: boolean | null
+          committee_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_round?: number | null
+          description?: string | null
+          id?: string
+          majority_threshold?: number | null
+          max_rounds?: number | null
+          started_at?: string | null
+          status?: string
+          title?: string
+          veto_members?: string[] | null
+          voting_type?: string
+        }
+        Relationships: []
       }
     }
     Views: {
