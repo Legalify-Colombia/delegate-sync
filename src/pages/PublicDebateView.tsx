@@ -984,13 +984,21 @@ export default function PublicDebateView() {
                   >
                      <div className="relative">
                        <div 
-                         className={`w-16 h-16 rounded-full transition-all duration-500 flex items-center justify-center text-2xl ${getDelegateStyle(delegate)} ${
+                         className={`w-16 h-16 rounded-full transition-all duration-500 flex items-center justify-center overflow-hidden ${getDelegateStyle(delegate)} ${
                            currentSpeaker?.delegate_id === delegate.id 
                              ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
                              : 'ring-2 ring-warning group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background'
                          }`} 
                        >
-                         {delegate.country_flag || '🏳️'}
+                         {delegate.country_flag ? (
+                           <img 
+                             src={delegate.country_flag} 
+                             alt={`Bandera de ${delegate.country_name}`}
+                             className="w-full h-full object-cover rounded-full"
+                           />
+                         ) : (
+                           <span className="text-2xl">🏳️</span>
+                         )}
                        </div>
                        {currentSpeaker?.delegate_id === delegate.id && (
                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center">
@@ -1027,14 +1035,22 @@ export default function PublicDebateView() {
                   >
                      <div className="relative">
                        <div 
-                         style={{ width: `${circleSize}px`, height: `${circleSize}px`, fontSize: `${Math.max(circleSize * 0.4, 16)}px` }}
-                         className={`rounded-full transition-all duration-500 flex items-center justify-center ${getDelegateStyle(delegate)} ${
+                         style={{ width: `${circleSize}px`, height: `${circleSize}px` }}
+                         className={`rounded-full transition-all duration-500 flex items-center justify-center overflow-hidden ${getDelegateStyle(delegate)} ${
                            currentSpeaker?.delegate_id === delegate.id 
                              ? 'ring-4 ring-success ring-offset-4 ring-offset-background shadow-lg shadow-success/25' 
                              : 'group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background'
                          }`}
                        >
-                         {delegate.country_flag || '🏳️'}
+                         {delegate.country_flag ? (
+                           <img 
+                             src={delegate.country_flag} 
+                             alt={`Bandera de ${delegate.country_name}`}
+                             className="w-full h-full object-cover rounded-full"
+                           />
+                         ) : (
+                           <span style={{fontSize: `${Math.max(circleSize * 0.4, 16)}px`}}>🏳️</span>
+                         )}
                        </div>
                        {currentSpeaker?.delegate_id === delegate.id && (
                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">

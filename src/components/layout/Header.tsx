@@ -66,7 +66,15 @@ export function Header() {
                   <>
                     <span className="mx-1">•</span>
                     <span className="flex items-center gap-1">
-                      <span className="text-base">{countryInfo.flag || '🏳️'}</span>
+                      {countryInfo.flag ? (
+                        <img 
+                          src={countryInfo.flag} 
+                          alt={`Bandera de ${countryInfo.name}`}
+                          className="w-4 h-3 object-cover rounded-sm"
+                        />
+                      ) : (
+                        <span className="text-base">🏳️</span>
+                      )}
                       <span>{countryInfo.name}</span>
                     </span>
                   </>
