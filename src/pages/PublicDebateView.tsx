@@ -4,7 +4,6 @@ import { Gavel, FileText, Users as UsersIcon, Clock, Mic, Calendar, Timer } from
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 import { Logo } from '@/components/ui/logo';
-import PublicAgendaDisplay from '@/components/agenda/PublicAgendaDisplay';
 
 interface Committee {
   id: string;
@@ -24,6 +23,8 @@ interface AgendaItem {
   status: 'pending' | 'active' | 'completed';
   is_active: boolean;
   position: number;
+  time_allocated: number;
+  started_at?: string;
 }
 
 interface SecretarySpeaking {
@@ -65,7 +66,15 @@ interface SpeakingQueue {
 }
 
 // Componente de Temporizadores Compacto
-const CompactTimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: number; speakerTimeLeft: number }) => {
+const CompactTimerDisplay = ({ 
+  sessionTime, 
+  speakerTimeLeft, 
+  agendaItem 
+}: { 
+  sessionTime: number; 
+  speakerTimeLeft: number; 
+  agendaItem?: { title: string; started_at?: string; time_allocated: number } | null;
+}) => {
   const formatTime = (seconds: number) => {
     const isNegative = seconds < 0;
     const absSeconds = Math.abs(seconds);
@@ -86,6 +95,22 @@ const CompactTimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: nu
     if (speakerTimeLeft <= 30) return 'text-warning';
     return 'text-success';
   };
+
+  const calculateAgendaTime = () => {
+    if (!agendaItem?.started_at) return 0;
+    const startTime = new Date(agendaItem.started_at).getTime();
+    const currentTime = Date.now();
+    return Math.floor((currentTime - startTime) / 1000);
+  };
+
+  const getAgendaTimeColor = (usedTime: number, allocatedTime: number) => {
+    const ratio = usedTime / allocatedTime;
+    if (ratio >= 1) return 'text-destructive';
+    if (ratio >= 0.8) return 'text-warning';
+    return 'text-orange-500';
+  };
+
+  const agendaUsedTime = calculateAgendaTime();
 
   return (
     <div className="flex flex-col gap-3 bg-card/40 backdrop-blur-sm p-4 rounded-xl border border-border/50">
@@ -114,6 +139,30 @@ const CompactTimerDisplay = ({ sessionTime, speakerTimeLeft }: { sessionTime: nu
           <div className="text-xs text-destructive font-medium mt-1">EXCEDIDO</div>
         )}
       </div>
+
+      {/* Tiempo de Agenda (solo si hay agenda activa) */}
+      {agendaItem && (
+        <>
+          <div className="h-px bg-border/50" />
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <FileText className="h-3 w-3 text-orange-500" />
+              <span className="text-xs font-medium text-muted-foreground uppercase">Resolución</span>
+            </div>
+            <div className="text-sm font-semibold text-foreground mb-1 line-clamp-1">
+              {agendaItem.title}
+            </div>
+            <div className={`text-lg font-bold transition-colors ${
+              getAgendaTimeColor(agendaUsedTime, agendaItem.time_allocated)
+            }`}>
+              {formatTime(agendaUsedTime)}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              de {formatTime(agendaItem.time_allocated)}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
@@ -161,21 +210,6 @@ const CompactSpeakingQueue = ({ queue }: { queue: SpeakingQueue[] }) => {
             +{queue.length - 8} más...
           </div>
         )}
-      </div>
-    </div>
-  );
-};
-
-// Componente de Agenda Compacta
-const CompactAgendaDisplay = ({ committeeId }: { committeeId: string }) => {
-  return (
-    <div className="bg-card/40 backdrop-blur-sm p-4 rounded-xl border border-border/50">
-      <div className="flex items-center gap-2 mb-3">
-        <Calendar className="h-4 w-4 text-orange-500" />
-        <h3 className="text-sm font-semibold">Agenda</h3>
-      </div>
-      <div className="max-h-48 overflow-y-auto custom-scrollbar">
-        <PublicAgendaDisplay committeeId={committeeId} />
       </div>
     </div>
   );
@@ -756,6 +790,24 @@ export default function PublicDebateView() {
           setSecretarySpeaking(null);
         }
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'agenda_items',
+        filter: `committee_id=eq.${committeeId}`
+      }, async () => {
+        console.log('Public view - Agenda items update');
+        
+        const { data: agendaData } = await supabase
+          .from('agenda_items')
+          .select('*')
+          .eq('committee_id', committeeId)
+          .order('position');
+
+        if (agendaData) {
+          setAgendaItems(agendaData as AgendaItem[]);
+        }
+      })
       .subscribe((status) => {
         console.log('Public view realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
@@ -853,22 +905,22 @@ export default function PublicDebateView() {
           <CompactTimerDisplay 
             sessionTime={sessionTime} 
             speakerTimeLeft={speakerTimeLeft}
+            agendaItem={agendaItems.find(item => item.is_active) || null}
           />
           <CompactSpeakingQueue queue={speakingQueue} />
-          <CompactAgendaDisplay committeeId={committeeId || ''} />
         </div>
 
         {/* Área central - Representación visual de delegados */}
         <div className="flex-1 flex flex-col justify-center items-center relative">
           {/* Panel móvil - Información compacta (tablet/mobile) */}
           <div className="xl:hidden w-full mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <CompactTimerDisplay 
                 sessionTime={sessionTime} 
                 speakerTimeLeft={speakerTimeLeft}
+                agendaItem={agendaItems.find(item => item.is_active) || null}
               />
               <CompactSpeakingQueue queue={speakingQueue} />
-              <CompactAgendaDisplay committeeId={committeeId || ''} />
             </div>
           </div>
 
