@@ -107,6 +107,8 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
     setEditingPublication(null);
   };
 
+  // Permitir publicación automática para communications_secretary y press
+  const canAutoPublish = profile.role === 'communications_secretary' || profile.role === 'press';
   const handleSave = async (status: 'draft' | 'submitted_for_review' | 'published_internal') => {
     if (!profile || !title.trim() || !content.trim()) {
       toast({
@@ -119,14 +121,37 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
 
     setLoading(true);
 
-    const publicationData = {
+    // Ajuste: nunca enviar 'none' como committee_id
+    let committeeIdToSend = null;
+    if (selectedCommittee && selectedCommittee !== 'none') {
+      committeeIdToSend = selectedCommittee;
+    }
+
+    // Solo permitir valores válidos para status
+    const allowedStatus = ['draft', 'submitted_for_review', 'approved', 'rejected', 'published_internal'];
+    let statusToSend = canAutoPublish ? 'approved' : status;
+    if (!allowedStatus.includes(statusToSend)) {
+      statusToSend = 'draft';
+    }
+
+    const publicationData: {
+      title: string;
+      content: string;
+      committee_id: string | null;
+      cover_image_url: string | null;
+      status: string;
+      author_id: string;
+    } = {
       title: title.trim(),
       content: content.trim(),
-      committee_id: selectedCommittee && selectedCommittee !== 'none' ? selectedCommittee : null,
-      cover_image_url: coverImageUrl || null,
-      status,
+      committee_id: committeeIdToSend,
+      cover_image_url: coverImageUrl ? coverImageUrl : null,
+      status: statusToSend,
       author_id: profile.id,
     };
+
+    // Log para depuración
+    console.log('Datos enviados a Supabase:', publicationData);
 
     let error;
 
@@ -141,7 +166,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
       // Create new publication
       const { error: insertError } = await supabase
         .from('news_publications')
-        .insert(publicationData);
+        .insert([publicationData]); // insert espera un array
       error = insertError;
     }
 
@@ -158,11 +183,12 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
         draft: 'Borrador guardado correctamente',
         submitted_for_review: 'Publicación enviada para revisión',
         published_internal: 'Publicación enviada como noticia interna',
+        approved: 'Noticia publicada y visible',
       };
 
       toast({
         title: "Éxito",
-        description: messages[status],
+        description: canAutoPublish ? messages['approved'] : messages[status],
       });
 
       resetForm();
@@ -218,6 +244,17 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
       default: return <FileText className="h-4 w-4" />;
     }
   };
+
+  if (!profile) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+          <CardDescription>No tienes un perfil válido para crear noticias.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card>
