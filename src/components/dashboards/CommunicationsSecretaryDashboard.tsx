@@ -130,7 +130,7 @@ export default function CommunicationsSecretaryDashboard() {
     const fetchAnnouncements = async () => {
         const { data, error } = await supabase
             .from('announcements')
-            .select('*, author:profiles(full_name)')
+            .select('*, author:profiles!fk_announcements_author(full_name)')
             .order('created_at', { ascending: false });
         if (!error) setAnnouncements(data as any || []);
     };

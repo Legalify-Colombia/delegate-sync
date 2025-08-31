@@ -48,7 +48,7 @@ export default function SecretaryGeneralDashboard() {
       const [announcementsRes, newsRes, committeesRes] = await Promise.all([
         supabase
           .from('announcements')
-          .select('*, author:profiles(full_name)')
+          .select('*, author:profiles!fk_announcements_author(full_name)')
           .order('created_at', { ascending: false })
           .limit(10),
         supabase

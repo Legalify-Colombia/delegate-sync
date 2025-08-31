@@ -60,7 +60,7 @@ export default function StaffDashboard() {
             try {
                 const [committeesResponse, announcementsResponse] = await Promise.all([
                     supabase.from('committees').select('*').order('name'),
-                    supabase.from('announcements').select('*, author:profiles(full_name)').order('created_at', { ascending: false }).limit(5)
+                    supabase.from('announcements').select('*, author:profiles!fk_announcements_author(full_name)').order('created_at', { ascending: false }).limit(5)
                 ]);
                 
                 if (committeesResponse.error) throw committeesResponse.error;

@@ -84,10 +84,10 @@ export default function DetailedStatistics() {
         supabase.from('staff_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending')
       ]);
 
-      // Personal de staff más productivo
+      // Personal de staff más productivo (especificando la relación con assigned_to)
       const { data: staffPerformanceData } = await supabase
         .from('staff_requests')
-        .select('assigned_to, profiles(full_name)')
+        .select('assigned_to, profiles!staff_requests_assigned_to_fkey(full_name)')
         .eq('status', 'completed')
         .not('assigned_to', 'is', null);
 
