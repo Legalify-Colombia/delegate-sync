@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
 import SpeakingQueue from '@/components/realtime/SpeakingQueue';
-import AttendancePanel from '@/components/realtime/AttendancePanel';
 import DelegateWarnings from '@/components/secretary/DelegateWarnings';
 import StaffRequestManager from '@/components/staff/StaffRequestManager';
 import AgendaManager from '@/components/agenda/AgendaManager';
@@ -296,10 +295,7 @@ export default function CommitteeSecretaryDashboard() {
               </TabsContent>
 
               <TabsContent value="delegates" className="mt-6">
-                <div className="space-y-4">
-                  <DelegateWarnings committeeId={committee.id} />
-                  <AttendancePanel committeeId={committee.id} />
-                </div>
+                <DelegateWarnings committeeId={committee.id} />
               </TabsContent>
 
               <TabsContent value="requests" className="mt-4">

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, FileWarning, Star, Eye, EyeOff } from 'lucide-react';
+import { AlertTriangle, FileWarning, Star, Eye, EyeOff, CheckCircle, UserX, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ interface Delegate {
   id: string;
   full_name: string;
   countries?: { name: string };
+  country_id?: string;
 }
 
 interface Warning {
@@ -35,6 +36,14 @@ interface Suspension {
   id: string;
   palabra_suspendida: boolean;
   voto_suspendido: boolean;
+}
+
+interface AttendanceRecord {
+  id: string;
+  committee_id: string;
+  profile_id: string;
+  presente: boolean;
+  fecha: string;
 }
 
 interface WarningFormData {
@@ -56,6 +65,7 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
   const [selectedDelegate, setSelectedDelegate] = useState<Delegate | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [suspensions, setSuspensions] = useState<Record<string, Suspension>>({});
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({});
   const [warningForm, setWarningForm] = useState<WarningFormData>({
     titulo: '',
     descripcion: '',
@@ -71,6 +81,7 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
   useEffect(() => {
     fetchDelegates();
     fetchSuspensions();
+    fetchAttendanceData();
   }, [committeeId]);
 
   const fetchDelegates = async () => {
@@ -79,13 +90,77 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
       .select(`
         id,
         full_name,
+        country_id,
         countries (name)
       `)
       .eq('committee_id', committeeId)
-      .eq('role', 'delegate');
+      .eq('role', 'delegate')
+      .order('full_name', { ascending: true });
 
     if (!error) {
       setDelegates(data || []);
+    }
+  };
+
+  const fetchAttendanceData = async () => {
+    try {
+      const { data: attendanceData, error } = await supabase
+        .from('asistencia')
+        .select('*')
+        .eq('committee_id', committeeId)
+        .order('fecha', { ascending: false });
+
+      if (!error) {
+        const latestByDelegate = new Map<string, AttendanceRecord>();
+        (attendanceData as any[] | null)?.forEach((rec: any) => {
+          if (!latestByDelegate.has(rec.profile_id)) {
+            latestByDelegate.set(rec.profile_id, rec);
+          }
+        });
+
+        const map: Record<string, boolean> = {};
+        delegates.forEach((d: any) => {
+          const latest = latestByDelegate.get(d.id);
+          map[d.id] = latest?.presente ?? false;
+        });
+        setAttendanceMap(map);
+      }
+    } catch (err) {
+      console.error('Error fetching attendance:', err);
+    }
+  };
+
+  const setAttendanceStatus = async (delegateId: string, presente: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('asistencia')
+        .insert({
+          committee_id: committeeId,
+          profile_id: delegateId,
+          presente,
+        });
+
+      if (error) {
+        toast({
+          title: 'Error',
+          description: 'No se pudo actualizar la asistencia',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setAttendanceMap((prev) => ({ ...prev, [delegateId]: presente }));
+      toast({
+        title: 'Asistencia actualizada',
+        description: presente ? 'Marcado como presente' : 'Marcado como ausente',
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: 'Error',
+        description: 'Ocurrió un problema al actualizar',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -103,6 +178,18 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
       setSuspensions(suspensionsMap);
     }
   };
+
+  // Use effect to update attendance when delegates change
+  useEffect(() => {
+    if (delegates.length > 0) {
+      fetchAttendanceData();
+    }
+  }, [delegates]);
+
+  const presentCount = useMemo(() => 
+    Object.values(attendanceMap).filter(s => s === true).length, 
+    [attendanceMap]
+  );
 
   const fetchWarnings = async (delegateId: string) => {
     const { data, error } = await supabase
@@ -237,9 +324,13 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <AlertTriangle className="h-5 w-5" />
+          <Users className="h-5 w-5" />
           <span>Gestión de Delegados</span>
         </CardTitle>
+        <CardDescription>
+          Gestiona la asistencia, calificaciones y amonestaciones de los delegados. 
+          Presentes: {presentCount}/{delegates.length}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -258,6 +349,31 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
               </div>
               
               <div className="flex space-x-2">
+                {/* Estado de asistencia */}
+                <div className="flex items-center gap-2">
+                  {attendanceMap[delegate.id] ? (
+                    <Badge variant="secondary" className="bg-success text-success-foreground">Presente</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">Ausente</Badge>
+                  )}
+                  <Button
+                    variant={attendanceMap[delegate.id] ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAttendanceStatus(delegate.id, true)}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    Presente
+                  </Button>
+                  <Button
+                    variant={!attendanceMap[delegate.id] ? 'destructive' : 'outline'}
+                    size="sm"
+                    onClick={() => setAttendanceStatus(delegate.id, false)}
+                  >
+                    <UserX className="h-4 w-4 mr-1" />
+                    Ausente
+                  </Button>
+                </div>
+                
                 {/* Botón Calificar */}
                 <Button
                   variant="outline"

@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users, Timer, Gavel } from 'lucide-react';
+import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users, Timer, Gavel, Ban } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useDelegateSuspensions } from '@/hooks/useDelegateSuspensions';
 
 interface QueueEntry {
   id: string;
@@ -126,6 +127,7 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [selectedSpeaker, setSelectedSpeaker] = useState<QueueEntry | null>(null);
   const { toast } = useToast();
+  const { isSpeechSuspended } = useDelegateSuspensions(profile?.id, committeeId);
 
   useEffect(() => {
     if (!committeeId) return;
@@ -506,24 +508,39 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
 
         {/* Request to Speak Button (for delegates) */}
         {!isSecretary && profile?.role === 'delegate' && (
-          <div className="flex justify-center gap-3">
-            <Button
-              onClick={() => requestToSpeak('turno')}
-              disabled={!!userInQueue}
-              className="flex-1 sm:flex-none"
-            >
-              <Hand className="h-4 w-4 mr-2" />
-              {userInQueue ? 'Ya solicitaste turno' : 'Solicitar Turno'}
-            </Button>
-            <Button
-              onClick={() => requestToSpeak('mocion')}
-              disabled={!!userInQueue}
-              variant="outline"
-              className="flex-1 sm:flex-none"
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Solicitar Moción
-            </Button>
+          <div className="space-y-3">
+            {isSpeechSuspended && (
+              <div className="flex items-center justify-center p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <Ban className="h-4 w-4 mr-2 text-destructive" />
+                <span className="text-sm text-destructive font-medium">
+                  Tu derecho a la palabra está suspendido temporalmente por amonestación
+                </span>
+              </div>
+            )}
+            <div className="flex justify-center gap-3">
+              <Button
+                onClick={() => requestToSpeak('turno')}
+                disabled={!!userInQueue || isSpeechSuspended}
+                className="flex-1 sm:flex-none"
+              >
+                <Hand className="h-4 w-4 mr-2" />
+                {isSpeechSuspended 
+                  ? 'Derecho suspendido'
+                  : userInQueue 
+                    ? 'Ya solicitaste turno' 
+                    : 'Solicitar Turno'
+                }
+              </Button>
+              <Button
+                onClick={() => requestToSpeak('mocion')}
+                disabled={!!userInQueue || isSpeechSuspended}
+                variant="outline"
+                className="flex-1 sm:flex-none"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Solicitar Moción
+              </Button>
+            </div>
           </div>
         )}
 

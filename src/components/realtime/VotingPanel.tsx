@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, MinusCircle, Vote } from 'lucide-react';
+import { CheckCircle, XCircle, MinusCircle, Vote, Ban } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useDelegateSuspensions } from '@/hooks/useDelegateSuspensions';
 
 interface VotingPanelProps {
   committeeId: string;
@@ -23,6 +24,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
   const [userVote, setUserVote] = useState<'for' | 'against' | 'abstain' | null>(null);
   const [voteCounts, setVoteCounts] = useState<VoteCount>({ for: 0, against: 0, abstain: 0 });
   const { toast } = useToast();
+  const { isVoteSuspended } = useDelegateSuspensions(profile?.id, committeeId);
 
   useEffect(() => {
     checkVotingStatus();
@@ -255,7 +257,15 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
       ) : (
         isVotingActive && profile?.role === 'delegate' && (
           <div className="space-y-2">
-            {userVote && (
+            {isVoteSuspended && (
+              <div className="flex items-center justify-center p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <Ban className="h-4 w-4 mr-2 text-destructive" />
+                <span className="text-sm text-destructive font-medium">
+                  Tu derecho al voto está suspendido temporalmente por amonestación
+                </span>
+              </div>
+            )}
+            {!isVoteSuspended && userVote && (
               <div className="text-center text-sm text-muted-foreground">
                 Tu voto actual: <strong>{getVoteText(userVote)}</strong>
               </div>
@@ -264,6 +274,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
               <Button
                 variant={userVote === 'for' ? 'default' : 'outline'}
                 onClick={() => submitVote('for')}
+                disabled={isVoteSuspended}
                 className="text-xs"
               >
                 <CheckCircle className="h-3 w-3 mr-1" />
@@ -272,6 +283,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
               <Button
                 variant={userVote === 'against' ? 'default' : 'outline'}
                 onClick={() => submitVote('against')}
+                disabled={isVoteSuspended}
                 className="text-xs"
               >
                 <XCircle className="h-3 w-3 mr-1" />
@@ -280,6 +292,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
               <Button
                 variant={userVote === 'abstain' ? 'default' : 'outline'}
                 onClick={() => submitVote('abstain')}
+                disabled={isVoteSuspended}
                 className="text-xs"
               >
                 <MinusCircle className="h-3 w-3 mr-1" />
