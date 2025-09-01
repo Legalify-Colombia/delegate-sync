@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Building, Activity, Newspaper, MessageSquare, Headphones, FileText, Loader2 } from 'lucide-react';
+import { Building, Activity, Newspaper, MessageSquare, Headphones, FileText, Loader2, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { animate } from "framer-motion"
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import StaffRequestManager from '@/components/staff/StaffRequestManager';
 import NewsEditor from '@/components/press/NewsEditor';
+import DelegateAttendanceRegistry from '@/components/staff/DelegateAttendanceRegistry';
 
 // --- Interfaces ---
 interface Committee { 
@@ -134,7 +135,12 @@ export default function StaffDashboard() {
 // --- Sub-componentes Refinados ---
 
 const TabNavigation = ({ activeTab, setActiveTab, profileRole }: { activeTab: string, setActiveTab: (tab: string) => void, profileRole?: string }) => {
-    const tabs = [ { id: 'committees', label: 'Comités', icon: Building }, { id: 'announcements', label: 'Anuncios', icon: MessageSquare }, { id: 'tools', label: 'Herramientas', icon: profileRole === 'staff' ? Headphones : Newspaper } ];
+    const tabs = [ 
+        { id: 'committees', label: 'Comités', icon: Building }, 
+        { id: 'announcements', label: 'Anuncios', icon: MessageSquare },
+        ...(profileRole === 'staff' ? [{ id: 'registro', label: 'Registro', icon: UserCheck }] : []),
+        { id: 'tools', label: 'Herramientas', icon: profileRole === 'staff' ? Headphones : Newspaper } 
+    ];
     return ( <div className="bg-white p-1 rounded-xl shadow-md flex items-center justify-around space-x-1"> {tabs.map(tab => ( <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex-1 py-3 px-2 text-sm font-bold rounded-lg transition-colors duration-300 ease-in-out flex items-center justify-center gap-2 ${activeTab === tab.id ? 'text-indigo-600' : 'text-slate-500 hover:bg-slate-100'}`} > {activeTab === tab.id && ( <motion.div layoutId="active-pill" className="absolute inset-0 bg-indigo-100 rounded-lg z-0" /> )} <tab.icon className="h-5 w-5 z-10" /> <span className="hidden sm:inline z-10">{tab.label}</span> </button> ))} </div> );
 };
 
@@ -143,6 +149,7 @@ const TabContent = ({ activeTab, committees, announcements, profile }: { activeT
         switch (activeTab) {
             case 'committees': return <CommitteeList committees={committees} />;
             case 'announcements': return <AnnouncementList announcements={announcements} />;
+            case 'registro': return <DelegateAttendanceRegistry />;
             case 'tools': return <ToolsView profile={profile} />;
             default: return null;
         }

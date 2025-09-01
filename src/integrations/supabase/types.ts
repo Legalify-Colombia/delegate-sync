@@ -211,6 +211,39 @@ export type Database = {
           },
         ]
       }
+      attendance_registry: {
+        Row: {
+          check_in_time: string
+          created_at: string
+          delegate_id: string
+          id: string
+          notes: string | null
+          staff_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          check_in_time?: string
+          created_at?: string
+          delegate_id: string
+          id?: string
+          notes?: string | null
+          staff_id: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          check_in_time?: string
+          created_at?: string
+          delegate_id?: string
+          id?: string
+          notes?: string | null
+          staff_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       committees: {
         Row: {
           created_at: string | null
