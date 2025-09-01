@@ -13,7 +13,7 @@ import CommitteeTimer from '@/components/realtime/CommitteeTimer';
 import VotingPanel from '@/components/realtime/VotingPanel';
 import SpeakingQueue from '@/components/realtime/SpeakingQueue';
 import AttendancePanel from '@/components/realtime/AttendancePanel';
-import DetailedRatingForm from '@/components/ratings/DetailedRatingForm';
+import DelegateWarnings from '@/components/secretary/DelegateWarnings';
 import StaffRequestManager from '@/components/staff/StaffRequestManager';
 import AgendaManager from '@/components/agenda/AgendaManager';
 import SecretarySpeaking from '@/components/secretary/SecretarySpeaking';
@@ -289,19 +289,6 @@ export default function CommitteeSecretaryDashboard() {
                     <AdvancedVotingPanel committeeId={committee.id} isSecretary={true} />
                   </CardContent>
                 </Card>
-
-                {/* Detailed Rating */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center space-x-2 text-base">
-                      <Star className="h-4 w-4" />
-                      <span>Calificaciones</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DetailedRatingForm />
-                  </CardContent>
-                </Card>
               </TabsContent>
 
               <TabsContent value="agenda" className="mt-4">
@@ -309,7 +296,10 @@ export default function CommitteeSecretaryDashboard() {
               </TabsContent>
 
               <TabsContent value="delegates" className="mt-6">
-                <AttendancePanel committeeId={committee.id} />
+                <div className="space-y-4">
+                  <DelegateWarnings committeeId={committee.id} />
+                  <AttendancePanel committeeId={committee.id} />
+                </div>
               </TabsContent>
 
               <TabsContent value="requests" className="mt-4">

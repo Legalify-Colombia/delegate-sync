@@ -97,28 +97,43 @@ export type Database = {
       }
       amonestaciones: {
         Row: {
+          activa: boolean | null
           country_id: string
           created_at: string
           delegate_id: string
+          descripcion: string
           id: string
-          motivo: string
+          justificacion: string | null
           secretary_id: string
+          suspender_palabra: boolean | null
+          suspender_voto: boolean | null
+          titulo: string
         }
         Insert: {
+          activa?: boolean | null
           country_id: string
           created_at?: string
           delegate_id: string
+          descripcion: string
           id?: string
-          motivo: string
+          justificacion?: string | null
           secretary_id: string
+          suspender_palabra?: boolean | null
+          suspender_voto?: boolean | null
+          titulo?: string
         }
         Update: {
+          activa?: boolean | null
           country_id?: string
           created_at?: string
           delegate_id?: string
+          descripcion?: string
           id?: string
-          motivo?: string
+          justificacion?: string | null
           secretary_id?: string
+          suspender_palabra?: boolean | null
+          suspender_voto?: boolean | null
+          titulo?: string
         }
         Relationships: [
           {
@@ -367,6 +382,36 @@ export type Database = {
           id?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      delegate_suspensions: {
+        Row: {
+          committee_id: string
+          created_at: string
+          delegate_id: string
+          id: string
+          palabra_suspendida: boolean | null
+          updated_at: string
+          voto_suspendido: boolean | null
+        }
+        Insert: {
+          committee_id: string
+          created_at?: string
+          delegate_id: string
+          id?: string
+          palabra_suspendida?: boolean | null
+          updated_at?: string
+          voto_suspendido?: boolean | null
+        }
+        Update: {
+          committee_id?: string
+          created_at?: string
+          delegate_id?: string
+          id?: string
+          palabra_suspendida?: boolean | null
+          updated_at?: string
+          voto_suspendido?: boolean | null
         }
         Relationships: []
       }
