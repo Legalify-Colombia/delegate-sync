@@ -82,7 +82,46 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
     fetchDelegates();
     fetchSuspensions();
     fetchAttendanceData();
-  }, [committeeId]);
+
+    // Real-time subscriptions
+    const suspensionsChannel = supabase
+      .channel(`delegate-suspensions-committee-${committeeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'delegate_suspensions',
+          filter: `committee_id=eq.${committeeId}`,
+        },
+        () => {
+          fetchSuspensions();
+        }
+      )
+      .subscribe();
+
+    const warningsChannel = supabase
+      .channel(`amonestaciones-committee-${committeeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'amonestaciones',
+        },
+        () => {
+          if (selectedDelegate) {
+            fetchWarnings(selectedDelegate.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(suspensionsChannel);
+      supabase.removeChannel(warningsChannel);
+    };
+  }, [committeeId, selectedDelegate]);
 
   const fetchDelegates = async () => {
     const { data, error } = await supabase

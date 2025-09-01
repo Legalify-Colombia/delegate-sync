@@ -20,6 +20,7 @@ interface QueueEntry {
   type?: 'turno' | 'mocion' | null;
   profiles: {
     full_name: string;
+    Photo_url?: string;
     countries?: { name: string };
   };
 }
@@ -202,15 +203,24 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
       const queueEntries = (queueData as any[]) || [];
       const delegateIds = Array.from(new Set(queueEntries.map((e: any) => e.delegate_id)));
 
-      let profilesMap: Record<string, { full_name: string; countries?: { name: string } } > = {};
+      let profilesMap: Record<string, { full_name: string; Photo_url?: string; countries?: { name: string } } > = {};
       if (delegateIds.length > 0) {
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select(`
+            id, 
+            full_name, 
+            Photo_url,
+            countries (name)
+          `)
           .in('id', delegateIds);
 
         (profilesData as any[] | null)?.forEach((p: any) => {
-          profilesMap[p.id] = { full_name: p.full_name };
+          profilesMap[p.id] = { 
+            full_name: p.full_name,
+            Photo_url: p.Photo_url,
+            countries: p.countries
+          };
         });
       }
 
@@ -462,41 +472,54 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
       <CardContent className="space-y-4">
         {/* Current Speaker */}
         {currentSpeaker && (
-          <div className="p-4 border rounded-lg bg-muted/50">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold flex items-center space-x-2">
-                <Users className="h-4 w-4" />
+          <div className="p-6 border rounded-lg bg-primary/5 border-primary/20">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold flex items-center space-x-2 text-primary">
+                <Users className="h-5 w-5" />
                 <span>Hablando Ahora</span>
               </h4>
               {isTimerRunning && (
                 <div className="flex items-center space-x-2 text-primary font-mono">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-lg">{formatTime(timeRemaining)}</span>
+                  <Clock className="h-5 w-5" />
+                  <span className="text-xl font-bold">{formatTime(timeRemaining)}</span>
                 </div>
               )}
             </div>
             <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{currentSpeaker.profiles.full_name}</p>
-                  {currentSpeaker.type === 'mocion' && (
-                    <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning">
-                      <Gavel className="h-3 w-3 mr-1" />
-                      MOCIÓN
-                    </Badge>
+              <div className="flex items-center space-x-4">
+                {currentSpeaker.profiles.Photo_url ? (
+                  <img 
+                    src={currentSpeaker.profiles.Photo_url} 
+                    alt={currentSpeaker.profiles.full_name}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                    <Users className="h-8 w-8 text-primary/60" />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <h3 className="text-2xl font-bold text-foreground">{currentSpeaker.profiles.full_name}</h3>
+                    {currentSpeaker.type === 'mocion' && (
+                      <Badge variant="outline" className="text-sm bg-warning/10 text-warning border-warning">
+                        <Gavel className="h-4 w-4 mr-1" />
+                        MOCIÓN
+                      </Badge>
+                    )}
+                  </div>
+                  {currentSpeaker.profiles.countries && (
+                    <p className="text-lg font-medium text-primary">
+                      {currentSpeaker.profiles.countries.name}
+                    </p>
                   )}
                 </div>
-                {currentSpeaker.profiles.countries && (
-                  <p className="text-sm text-muted-foreground">
-                    {currentSpeaker.profiles.countries.name}
-                  </p>
-                )}
               </div>
               {isSecretary && (
                 <Button
                   onClick={() => completeSpeaker(currentSpeaker.id)}
                   variant="outline"
-                  size="sm"
+                  size="lg"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Completar
@@ -549,12 +572,23 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
           <div className="space-y-2">
             <h4 className="font-semibold">Cola de Espera ({pendingQueue.length})</h4>
             {pendingQueue.map((entry, index) => (
-              <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Badge variant="secondary">{index + 1}</Badge>
+              <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+                <div className="flex items-center space-x-4">
+                  <Badge variant="secondary" className="text-sm px-2 py-1">{index + 1}</Badge>
+                  {entry.profiles.Photo_url ? (
+                    <img 
+                      src={entry.profiles.Photo_url} 
+                      alt={entry.profiles.full_name}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-muted"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center border-2 border-muted">
+                      <Users className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{entry.profiles.full_name}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-lg font-bold text-foreground">{entry.profiles.full_name}</h4>
                       {entry.type === 'mocion' && (
                         <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning">
                           MOCIÓN
@@ -562,7 +596,7 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
                       )}
                     </div>
                     {entry.profiles.countries && (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm font-medium text-primary">
                         {entry.profiles.countries.name}
                       </p>
                     )}

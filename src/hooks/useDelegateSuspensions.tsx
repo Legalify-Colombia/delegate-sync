@@ -20,13 +20,25 @@ export function useDelegateSuspensions(delegateId: string | undefined, committee
 
     // Real-time subscription for suspensions
     const channel = supabase
-      .channel(`delegate-suspensions-${delegateId}`)
+      .channel(`delegate-suspensions-${delegateId}-${committeeId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'delegate_suspensions',
+          filter: `delegate_id=eq.${delegateId}`,
+        },
+        () => {
+          fetchSuspensions();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'amonestaciones',
           filter: `delegate_id=eq.${delegateId}`,
         },
         () => {
