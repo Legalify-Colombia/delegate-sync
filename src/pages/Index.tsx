@@ -155,7 +155,7 @@ const Index = () => {
                         </div>
                     </div>
                     <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                        <p>&copy; 2024 Resolution Hub - Legalify Colombia. Todos los derechos reservados.</p>
+                        <p>&copy; 2025 The Resolution Hub - Desarrollado por: Legalify Colombia. Todos los derechos reservados.</p>
                         <div className="flex space-x-4 mt-4 md:mt-0">
                             <a href="#" className="hover:text-gray-900"><Github size={20} /></a>
                             <a href="#" className="hover:text-gray-900"><Twitter size={20} /></a>
