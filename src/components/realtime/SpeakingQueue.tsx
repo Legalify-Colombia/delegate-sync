@@ -8,6 +8,7 @@ import { MessageSquare, Hand, Play, Square, Clock, CheckCircle, Users, Timer, Ga
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { useDelegateSuspensions } from '@/hooks/useDelegateSuspensions';
 
 interface QueueEntry {
@@ -129,6 +130,7 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
   const [selectedSpeaker, setSelectedSpeaker] = useState<QueueEntry | null>(null);
   const { toast } = useToast();
   const { isSpeechSuspended } = useDelegateSuspensions(profile?.id, committeeId);
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     if (!committeeId) return;
@@ -265,6 +267,7 @@ export default function SpeakingQueue({ committeeId, isSecretary = false }: Spea
         delegate_id: profile.id,
         position: nextPosition,
         type: type,
+        model_id: currentModel?.id || '',
       });
 
     if (error) {

@@ -9,6 +9,7 @@ import { Star, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface Delegate {
   id: string;
@@ -40,6 +41,7 @@ export default function DetailedRatingForm() {
   const [existingRating, setExistingRating] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     if (profile?.committee_id) {
@@ -118,6 +120,7 @@ export default function DetailedRatingForm() {
       secretary_id: profile.id,
       delegate_id: selectedDelegate,
       committee_id: profile.committee_id!,
+      model_id: currentModel?.id || '',
       ...ratings,
     };
 

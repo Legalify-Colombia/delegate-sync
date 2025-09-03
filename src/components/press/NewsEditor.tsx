@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { ImageUpload } from '@/components/ui/image-upload';
 
 interface Committee {
@@ -58,6 +59,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
   const [editingPublication, setEditingPublication] = useState<NewsPublication | null>(null);
   
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     fetchCommittees();
@@ -150,6 +152,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
       cover_image_url: string | null;
       status: string;
       author_id: string;
+      model_id: string;
     } = {
       title: title.trim(),
       content: content.trim(),
@@ -157,6 +160,7 @@ export default function NewsEditor({ showApprovalInterface = false }: NewsEditor
       cover_image_url: coverImageUrl ? coverImageUrl : null,
       status: statusToSend,
       author_id: profile.id,
+      model_id: currentModel?.id || '',
     };
 
     // Log para depuración

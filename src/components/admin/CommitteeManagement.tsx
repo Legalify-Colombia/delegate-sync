@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Play, Pause, Vote } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface Committee {
   id: string;
@@ -31,6 +32,7 @@ export default function CommitteeManagement() {
   const [editingCommittee, setEditingCommittee] = useState<Committee | null>(null);
   const [formData, setFormData] = useState<CommitteeFormData>({ name: '', topic: '' });
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     fetchCommittees();
@@ -109,6 +111,7 @@ export default function CommitteeManagement() {
           .insert({
             name: formData.name.trim(),
             topic: formData.topic.trim(),
+            model_id: currentModel?.id || '',
           });
 
         if (error) throw error;

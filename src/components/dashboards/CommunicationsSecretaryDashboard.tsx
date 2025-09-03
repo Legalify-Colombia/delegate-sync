@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 // Componentes UI y Layout de tu proyecto
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
@@ -106,6 +107,7 @@ const NewsManagementModal = ({ onClose }) => (
 export default function CommunicationsSecretaryDashboard() {
     const { profile } = useAuth();
     const { toast } = useToast();
+    const { currentModel } = useCurrentModel();
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [news, setNews] = useState<NewsPublication[]>([]);
     const [committees, setCommittees] = useState<Committee[]>([]);
@@ -148,7 +150,7 @@ export default function CommunicationsSecretaryDashboard() {
     const createAnnouncement = async () => {
         if (!profile || !announcementTitle.trim() || !announcementContent.trim()) return;
         setLoading(true);
-        const { error } = await supabase.from('announcements').insert({ title: announcementTitle.trim(), content: announcementContent.trim(), author_id: profile.id });
+        const { error } = await supabase.from('announcements').insert({ title: announcementTitle.trim(), content: announcementContent.trim(), author_id: profile.id, model_id: currentModel?.id || '' });
         if (error) { toast({ title: "Error", description: "No se pudo crear el anuncio", variant: "destructive" }); } 
         else {
             toast({ title: "Éxito", description: "Anuncio creado correctamente" });
@@ -178,7 +180,8 @@ export default function CommunicationsSecretaryDashboard() {
             cover_image_url: newsData.cover_image_url.trim() || null,
             committee_id: newsData.committee_id || null,
             author_id: profile.id,
-            status: status
+            status: status,
+            model_id: currentModel?.id || '',
         });
         if (error) { toast({ title: "Error", description: "No se pudo crear la noticia", variant: "destructive" }); }
         else {

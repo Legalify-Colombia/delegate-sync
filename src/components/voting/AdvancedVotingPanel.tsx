@@ -22,6 +22,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import {
   Dialog,
   DialogContent,
@@ -77,6 +78,7 @@ export default function AdvancedVotingPanel({
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   const [newSession, setNewSession] = useState({
     title: '',
@@ -186,7 +188,8 @@ export default function AdvancedVotingPanel({
         majority_threshold: newSession.majority_threshold,
         max_rounds: newSession.max_rounds,
         current_round: 1,
-        status: 'pending'
+        status: 'pending',
+        model_id: currentModel?.id || ''
       })
       .select()
       .single();
@@ -206,7 +209,8 @@ export default function AdvancedVotingPanel({
       .insert({
         voting_session_id: sessionData.id,
         round_number: 1,
-        status: 'pending'
+        status: 'pending',
+        model_id: currentModel?.id || ''
       });
 
     if (roundError) {
@@ -274,7 +278,8 @@ export default function AdvancedVotingPanel({
         voting_session_id: currentSession?.id,
         voting_round_id: currentRound.id,
         agenda_item_id: agendaItemId,
-        vote_type: voteType
+        vote_type: voteType,
+        model_id: currentModel?.id || ''
       });
 
     if (error) {
@@ -361,7 +366,8 @@ export default function AdvancedVotingPanel({
         .insert({
           voting_session_id: currentSession.id,
           round_number: nextRound,
-          status: 'pending'
+          status: 'pending',
+          model_id: currentModel?.id || ''
         });
     }
 

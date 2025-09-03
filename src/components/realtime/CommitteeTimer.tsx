@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Play, Pause, Square, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface CommitteeTimerProps {
   committeeId: string;
@@ -15,6 +16,7 @@ export default function CommitteeTimer({ committeeId, isSecretary = false }: Com
   const [isRunning, setIsRunning] = useState(false);
   const [inputMinutes, setInputMinutes] = useState(5);
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     // Subscribe to committee changes for real-time updates
@@ -114,6 +116,7 @@ export default function CommitteeTimer({ committeeId, isSecretary = false }: Com
         .insert({
           committee_id: committeeId,
           event_type: 'timer_start',
+          model_id: currentModel?.id || '',
           details: { 
             duration_minutes: Math.floor(durationSeconds / 60),
             duration_seconds: durationSeconds,
@@ -138,6 +141,7 @@ export default function CommitteeTimer({ committeeId, isSecretary = false }: Com
         .insert({
           committee_id: committeeId,
           event_type: 'timer_pause',
+          model_id: currentModel?.id || '',
           details: { remaining_seconds: timeLeft }
         });
 

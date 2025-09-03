@@ -6,6 +6,7 @@ import { Mic, MicOff, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface SecretarySpeakingProps {
   committeeId: string;
@@ -23,6 +24,7 @@ export default function SecretarySpeaking({ committeeId }: SecretarySpeakingProp
   const [speakingStatus, setSpeakingStatus] = useState<SpeakingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     if (committeeId && profile?.id) {
@@ -85,7 +87,8 @@ export default function SecretarySpeaking({ committeeId }: SecretarySpeakingProp
         committee_id: committeeId,
         secretary_id: profile.id,
         is_active: true,
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        model_id: currentModel?.id || '',
       });
 
     if (error) {

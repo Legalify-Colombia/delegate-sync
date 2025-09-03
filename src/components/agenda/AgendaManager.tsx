@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ export default function AgendaManager({ committeeId }: AgendaManagerProps) {
     time_allocated: 1800 // 30 minutes default
   });
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     if (committeeId) {
@@ -128,7 +130,8 @@ export default function AgendaManager({ committeeId }: AgendaManagerProps) {
         description: newItem.description.trim() || null,
         time_allocated: newItem.time_allocated,
         position: nextPosition,
-        status: 'pending'
+        status: 'pending',
+        model_id: currentModel?.id || '',
       });
 
     if (error) {

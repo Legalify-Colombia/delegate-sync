@@ -12,6 +12,7 @@ import { AlertTriangle, FileWarning, Star, Eye, EyeOff, CheckCircle, UserX, User
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import DelegateRatingModal from './DelegateRatingModal';
 
 interface Delegate {
@@ -61,6 +62,7 @@ interface DelegateWarningsProps {
 export default function DelegateWarnings({ committeeId }: DelegateWarningsProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
   const [delegates, setDelegates] = useState<Delegate[]>([]);
   const [selectedDelegate, setSelectedDelegate] = useState<Delegate | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
@@ -177,6 +179,7 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
           committee_id: committeeId,
           profile_id: delegateId,
           presente,
+          model_id: currentModel?.id || '',
         });
 
       if (error) {
@@ -259,6 +262,7 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
         delegate_id: selectedDelegate.id,
         secretary_id: profile.id,
         country_id: selectedDelegate.countries?.name || '',
+        model_id: currentModel?.id || '',
       });
 
     if (warningError) {
@@ -280,6 +284,7 @@ export default function DelegateWarnings({ committeeId }: DelegateWarningsProps)
         committee_id: committeeId,
         palabra_suspendida: warningForm.suspender_palabra || (existingSuspension?.palabra_suspendida || false),
         voto_suspendido: warningForm.suspender_voto || (existingSuspension?.voto_suspendido || false),
+        model_id: currentModel?.id || '',
       };
 
       if (existingSuspension) {

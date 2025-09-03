@@ -8,6 +8,7 @@ import { Search, UserCheck, UserX, Clock, Flag } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface Delegate {
   id: string;
@@ -32,6 +33,7 @@ interface AttendanceRecord {
 export default function DelegateAttendanceRegistry() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
   const [searchTerm, setSearchTerm] = useState('');
   const [delegates, setDelegates] = useState<Delegate[]>([]);
   const [filteredDelegates, setFilteredDelegates] = useState<Delegate[]>([]);
@@ -135,7 +137,8 @@ export default function DelegateAttendanceRegistry() {
             delegate_id: delegateId,
             staff_id: profile.id,
             status,
-            check_in_time: new Date().toISOString()
+            check_in_time: new Date().toISOString(),
+            model_id: currentModel?.id || '',
           });
 
         if (error) throw error;

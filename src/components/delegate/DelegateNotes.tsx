@@ -8,6 +8,7 @@ import { Plus, Edit, Trash2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface Note {
   id: string;
@@ -26,6 +27,7 @@ export default function DelegateNotes() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     if (profile) {
@@ -89,6 +91,7 @@ export default function DelegateNotes() {
           delegate_id: profile.id,
           title: title.trim(),
           content: content.trim(),
+          model_id: currentModel?.id || '',
         });
 
       if (error) {

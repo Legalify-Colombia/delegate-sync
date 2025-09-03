@@ -22,6 +22,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface StaffRequest {
   id: string;
@@ -57,6 +58,7 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     fetchRequests();
@@ -135,6 +137,7 @@ export default function StaffRequestManager({ isStaff = false }: StaffRequestMan
         priority,
         committee_id: profile.committee_id!,
         requester_id: profile.id,
+        model_id: currentModel?.id || '',
       });
 
     if (error) {

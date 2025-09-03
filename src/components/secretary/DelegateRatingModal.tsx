@@ -8,6 +8,7 @@ import { Star, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface Delegate {
   id: string;
@@ -33,6 +34,7 @@ interface DelegateRatingModalProps {
 export default function DelegateRatingModal({ delegate, isOpen, onClose }: DelegateRatingModalProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const { currentModel } = useCurrentModel();
   const [ratings, setRatings] = useState<RatingCriteria>({
     personal_presentation: 5,
     speech_appreciation: 5,
@@ -97,6 +99,7 @@ export default function DelegateRatingModal({ delegate, isOpen, onClose }: Deleg
       secretary_id: profile.id,
       delegate_id: delegate.id,
       committee_id: profile.committee_id!,
+      model_id: currentModel?.id || '',
       ...ratings,
     };
 

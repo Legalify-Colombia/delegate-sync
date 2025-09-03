@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, MinusCircle, Vote, Ban } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { useDelegateSuspensions } from '@/hooks/useDelegateSuspensions';
 
 interface VotingPanelProps {
@@ -25,6 +26,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
   const [voteCounts, setVoteCounts] = useState<VoteCount>({ for: 0, against: 0, abstain: 0 });
   const { toast } = useToast();
   const { isVoteSuspended } = useDelegateSuspensions(profile?.id, committeeId);
+  const { currentModel } = useCurrentModel();
 
   useEffect(() => {
     checkVotingStatus();
@@ -126,6 +128,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
         user_id: profile.id,
         committee_id: committeeId,
         vote_type: voteType,
+        model_id: currentModel?.id || '',
       });
 
     if (error) {
@@ -155,6 +158,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
         .insert({
           committee_id: committeeId,
           event_type: 'vote_started',
+          model_id: currentModel?.id || '',
           details: {}
         });
 
@@ -178,6 +182,7 @@ export default function VotingPanel({ committeeId, isSecretary = false }: Voting
         .insert({
           committee_id: committeeId,
           event_type: 'vote_closed',
+          model_id: currentModel?.id || '',
           details: { results: voteCounts as any }
         });
 
