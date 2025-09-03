@@ -10,26 +10,11 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { ExtendedProfile, ExtendedCommittee, Country } from '@/integrations/supabase/custom-types';
 
-interface Profile {
-  id: string;
-  full_name: string;
-  role: string;
-  committee_id: string | null;
-  country_id: string | null;
-  model_id: string | null;
-  created_at: string;
-}
-
-interface Committee {
-  id: string;
-  name: string;
-}
-
-interface Country {
-  id: string;
-  name: string;
-}
+// Use imported types
+type Profile = ExtendedProfile;
+type Committee = ExtendedCommittee;
 
 interface UserFormData {
   full_name: string;
@@ -79,12 +64,12 @@ export default function UserManagementByModel() {
   const fetchCommittees = async () => {
     if (!profile?.model_id) return;
     
-    // Temporarily disable committee fetching to avoid TypeScript issues
+    // Disable committee fetching for now to avoid type issues  
     setCommittees([]);
   };
 
   const fetchCountries = async () => {
-    // Temporarily disable countries fetching to avoid TypeScript issues
+    // Disable countries fetching for now to avoid type issues
     setCountries([]);
   };
 

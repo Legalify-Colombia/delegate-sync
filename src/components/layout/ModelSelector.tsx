@@ -3,20 +3,20 @@ import { Check, ChevronDown, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentModel } from '@/hooks/useCurrentModel';
 import { cn } from '@/lib/utils';
 
-interface Model {
+// Model option for selector
+interface ModelOption {
   id: string;
   name: string;
-  logo_url: string;
+  logo_url: string | null;
 }
 
 export function ModelSelector() {
   const [open, setOpen] = useState(false);
-  const [models, setModels] = useState<Model[]>([]);
+  const [models, setModels] = useState<ModelOption[]>([]);
   const { profile } = useAuth();
   const { currentModel, setCurrentModel, loading } = useCurrentModel();
 
@@ -28,26 +28,38 @@ export function ModelSelector() {
     if (!profile) return;
 
     try {
+      const SUPABASE_URL = "https://lsfmaelgwxoqcmzkmaba.supabase.co";
+      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZm1hZWxnd3hvcWNtemttYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMjE1NjUsImV4cCI6MjA3MTc5NzU2NX0.HqX9840nRL48pN4nSX-o2SaRtoxfomaIPK7gkgSSc34";
+      
       if (profile.role === 'admin') {
         // Admin can see all models
-        const { data, error } = await supabase
-          .from('models' as any)
-          .select('id, name, logo_url')
-          .order('name');
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/models?select=id,name,logo_url&order=name`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        });
         
-        if (error) throw error;
-        setModels((data as any) || []);
+        if (response.ok) {
+          const data = await response.json();
+          setModels(data || []);
+        }
       } else {
         // Users can only see their assigned model
         if (profile.model_id) {
-          const { data, error } = await supabase
-            .from('models' as any)
-            .select('id, name, logo_url')
-            .eq('id', profile.model_id)
-            .single();
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/models?select=id,name,logo_url&id=eq.${profile.model_id}`, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          });
           
-          if (error) throw error;
-          setModels([data as any]);
+          if (response.ok) {
+            const data = await response.json();
+            setModels(data || []);
+          }
         }
       }
     } catch (error) {

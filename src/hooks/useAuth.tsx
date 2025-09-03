@@ -2,15 +2,10 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ExtendedProfile } from '@/integrations/supabase/custom-types';
 
-interface Profile {
-  id: string;
-  full_name: string;
-  role: 'admin' | 'secretary_general' | 'committee_secretary' | 'communications_secretary' | 'delegate' | 'staff' | 'press';
-  committee_id: string | null;
-  country_id: string | null;
-  model_id?: string | null;
-}
+// Use the extended profile type
+type Profile = ExtendedProfile;
 
 interface AuthContextType {
   user: User | null;
@@ -76,7 +71,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setProfile(data);
+      // Cast data and add model_id if missing
+      const profileData = data as any;
+      const extendedProfile: ExtendedProfile = {
+        id: profileData.id,
+        full_name: profileData.full_name,
+        role: profileData.role,
+        committee_id: profileData.committee_id,
+        country_id: profileData.country_id,
+        model_id: profileData.model_id || null,
+        created_at: profileData.created_at,
+        updated_at: profileData.updated_at,
+        Photo_url: profileData.Photo_url,
+        "Entidad que representa": profileData["Entidad que representa"]
+      };
+      setProfile(extendedProfile);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
