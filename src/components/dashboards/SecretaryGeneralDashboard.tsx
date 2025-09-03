@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, MessageSquare, Building, Newspaper, Eye } from 'lucide-react';
+import { Activity, MessageSquare, Building, Newspaper, Eye, Users } from 'lucide-react';
 import DetailedStatistics from '@/components/admin/DetailedStatistics';
 import UserManagementByModel from '@/components/admin/UserManagementByModel';
+import CommitteeManagementByModel from '@/components/admin/CommitteeManagementByModel';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Announcement {
@@ -89,7 +90,7 @@ export default function SecretaryGeneralDashboard() {
               <span>Estadísticas</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center space-x-2">
-              <Activity className="h-4 w-4" />
+              <Users className="h-4 w-4" />
               <span>Usuarios</span>
             </TabsTrigger>
             <TabsTrigger value="committees" className="flex items-center space-x-2">
@@ -115,61 +116,9 @@ export default function SecretaryGeneralDashboard() {
           </TabsContent>
 
           <TabsContent value="committees" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Estado en Tiempo Real de los Comités</CardTitle>
-                <CardDescription>Supervisa el funcionamiento de todos los comités</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {committees.map((committee) => {
-                    const getStatusColor = (status: string) => {
-                      switch (status) {
-                        case 'active': return 'bg-green-100 text-green-800 border-green-300';
-                        case 'voting': return 'bg-blue-100 text-blue-800 border-blue-300';
-                        case 'paused': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-                        default: return 'bg-gray-100 text-gray-800 border-gray-300';
-                      }
-                    };
-
-                    const getStatusText = (status: string) => {
-                      switch (status) {
-                        case 'active': return 'Debate Activo';
-                        case 'voting': return 'En Votación';
-                        case 'paused': return 'En Pausa';
-                        default: return 'Estado Desconocido';
-                      }
-                    };
-
-                    const formatTime = (seconds: number) => {
-                      const hours = Math.floor(seconds / 3600);
-                      const minutes = Math.floor((seconds % 3600) / 60);
-                      return `${hours}h ${minutes}m`;
-                    };
-
-                    return (
-                      <Card key={committee.id} className="relative">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-lg">{committee.name}</CardTitle>
-                          <CardDescription className="text-sm">{committee.topic}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(committee.current_status)}`}>
-                              {getStatusText(committee.current_status)}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Tiempo acumulado: {formatTime(committee.session_accumulated_seconds || 0)}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+            <CommitteeManagementByModel />
           </TabsContent>
+
 
           <TabsContent value="communications" className="space-y-6">
             <Card>

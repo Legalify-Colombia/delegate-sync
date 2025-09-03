@@ -22,6 +22,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          model_id: string
           position: number
           started_at: string | null
           status: string
@@ -36,6 +37,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          model_id: string
           position?: number
           started_at?: string | null
           status?: string
@@ -50,6 +52,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          model_id?: string
           position?: number
           started_at?: string | null
           status?: string
@@ -57,7 +60,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agenda_participations: {
         Row: {
@@ -67,6 +78,7 @@ export type Database = {
           delegate_id: string
           ended_at: string | null
           id: string
+          model_id: string
           participation_type: string
           started_at: string | null
           time_used: number | null
@@ -78,6 +90,7 @@ export type Database = {
           delegate_id: string
           ended_at?: string | null
           id?: string
+          model_id: string
           participation_type?: string
           started_at?: string | null
           time_used?: number | null
@@ -89,11 +102,20 @@ export type Database = {
           delegate_id?: string
           ended_at?: string | null
           id?: string
+          model_id?: string
           participation_type?: string
           started_at?: string | null
           time_used?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       amonestaciones: {
         Row: {
@@ -104,6 +126,7 @@ export type Database = {
           descripcion: string
           id: string
           justificacion: string | null
+          model_id: string
           secretary_id: string
           suspender_palabra: boolean | null
           suspender_voto: boolean | null
@@ -117,6 +140,7 @@ export type Database = {
           descripcion: string
           id?: string
           justificacion?: string | null
+          model_id: string
           secretary_id: string
           suspender_palabra?: boolean | null
           suspender_voto?: boolean | null
@@ -130,6 +154,7 @@ export type Database = {
           descripcion?: string
           id?: string
           justificacion?: string | null
+          model_id?: string
           secretary_id?: string
           suspender_palabra?: boolean | null
           suspender_voto?: boolean | null
@@ -141,6 +166,13 @@ export type Database = {
             columns: ["delegate_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
             referencedColumns: ["id"]
           },
           {
@@ -158,6 +190,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          model_id: string
           title: string
         }
         Insert: {
@@ -165,6 +198,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          model_id: string
           title: string
         }
         Update: {
@@ -172,6 +206,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          model_id?: string
           title?: string
         }
         Relationships: [
@@ -182,6 +217,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
         ]
       }
       asistencia: {
@@ -189,6 +231,7 @@ export type Database = {
           committee_id: string
           fecha: string
           id: string
+          model_id: string
           presente: boolean
           profile_id: string
           seccion: string | null
@@ -197,6 +240,7 @@ export type Database = {
           committee_id: string
           fecha?: string
           id?: string
+          model_id: string
           presente?: boolean
           profile_id: string
           seccion?: string | null
@@ -205,6 +249,7 @@ export type Database = {
           committee_id?: string
           fecha?: string
           id?: string
+          model_id?: string
           presente?: boolean
           profile_id?: string
           seccion?: string | null
@@ -224,6 +269,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
         ]
       }
       attendance_registry: {
@@ -232,6 +284,7 @@ export type Database = {
           created_at: string
           delegate_id: string
           id: string
+          model_id: string
           notes: string | null
           staff_id: string
           status: string
@@ -242,6 +295,7 @@ export type Database = {
           created_at?: string
           delegate_id: string
           id?: string
+          model_id: string
           notes?: string | null
           staff_id: string
           status: string
@@ -252,12 +306,21 @@ export type Database = {
           created_at?: string
           delegate_id?: string
           id?: string
+          model_id?: string
           notes?: string | null
           staff_id?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       committees: {
         Row: {
@@ -266,6 +329,7 @@ export type Database = {
           current_timer_end: string | null
           current_timer_remaining_seconds: number | null
           id: string
+          model_id: string
           name: string
           session_accumulated_seconds: number
           session_started_at: string | null
@@ -280,6 +344,7 @@ export type Database = {
           current_timer_end?: string | null
           current_timer_remaining_seconds?: number | null
           id?: string
+          model_id: string
           name: string
           session_accumulated_seconds?: number
           session_started_at?: string | null
@@ -294,13 +359,22 @@ export type Database = {
           current_timer_end?: string | null
           current_timer_remaining_seconds?: number | null
           id?: string
+          model_id?: string
           name?: string
           session_accumulated_seconds?: number
           session_started_at?: string | null
           topic?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       countries: {
         Row: {
@@ -333,6 +407,7 @@ export type Database = {
           details: Json | null
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
+          model_id: string
         }
         Insert: {
           committee_id: string
@@ -340,6 +415,7 @@ export type Database = {
           details?: Json | null
           event_type: Database["public"]["Enums"]["event_type"]
           id?: string
+          model_id: string
         }
         Update: {
           committee_id?: string
@@ -347,6 +423,7 @@ export type Database = {
           details?: Json | null
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
+          model_id?: string
         }
         Relationships: [
           {
@@ -354,6 +431,13 @@ export type Database = {
             columns: ["committee_id"]
             isOneToOne: false
             referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
             referencedColumns: ["id"]
           },
         ]
@@ -364,6 +448,7 @@ export type Database = {
           created_at: string
           delegate_id: string
           id: string
+          model_id: string
           title: string
           updated_at: string
         }
@@ -372,6 +457,7 @@ export type Database = {
           created_at?: string
           delegate_id: string
           id?: string
+          model_id: string
           title: string
           updated_at?: string
         }
@@ -380,10 +466,19 @@ export type Database = {
           created_at?: string
           delegate_id?: string
           id?: string
+          model_id?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       delegate_suspensions: {
         Row: {
@@ -391,6 +486,7 @@ export type Database = {
           created_at: string
           delegate_id: string
           id: string
+          model_id: string
           palabra_suspendida: boolean | null
           updated_at: string
           voto_suspendido: boolean | null
@@ -400,6 +496,7 @@ export type Database = {
           created_at?: string
           delegate_id: string
           id?: string
+          model_id: string
           palabra_suspendida?: boolean | null
           updated_at?: string
           voto_suspendido?: boolean | null
@@ -409,11 +506,20 @@ export type Database = {
           created_at?: string
           delegate_id?: string
           id?: string
+          model_id?: string
           palabra_suspendida?: boolean | null
           updated_at?: string
           voto_suspendido?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       detailed_ratings: {
         Row: {
@@ -425,6 +531,7 @@ export type Database = {
           delegate_id: string
           dispositions_quality: number
           id: string
+          model_id: string
           personal_presentation: number
           secretary_id: string
           speech_appreciation: number
@@ -438,6 +545,7 @@ export type Database = {
           delegate_id: string
           dispositions_quality: number
           id?: string
+          model_id: string
           personal_presentation: number
           secretary_id: string
           speech_appreciation: number
@@ -451,6 +559,7 @@ export type Database = {
           delegate_id?: string
           dispositions_quality?: number
           id?: string
+          model_id?: string
           personal_presentation?: number
           secretary_id?: string
           speech_appreciation?: number
@@ -471,6 +580,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_secretary"
             columns: ["secretary_id"]
             isOneToOne: false
@@ -478,6 +594,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      models: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          location: string | null
+          logo_url: string | null
+          name: string
+          start_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          name: string
+          start_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          name?: string
+          start_date?: string | null
+        }
+        Relationships: []
       }
       news_publications: {
         Row: {
@@ -487,6 +636,7 @@ export type Database = {
           cover_image_url: string | null
           created_at: string
           id: string
+          model_id: string
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
@@ -500,6 +650,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           id?: string
+          model_id: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -513,6 +664,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string
           id?: string
+          model_id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
@@ -525,6 +677,13 @@ export type Database = {
             columns: ["committee_id"]
             isOneToOne: false
             referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
             referencedColumns: ["id"]
           },
           {
@@ -544,6 +703,7 @@ export type Database = {
           "Entidad que representa": string | null
           full_name: string
           id: string
+          model_id: string | null
           Photo_url: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string | null
@@ -555,6 +715,7 @@ export type Database = {
           "Entidad que representa"?: string | null
           full_name: string
           id: string
+          model_id?: string | null
           Photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
@@ -566,11 +727,19 @@ export type Database = {
           "Entidad que representa"?: string | null
           full_name?: string
           id?: string
+          model_id?: string | null
           Photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_committee_id_fkey"
             columns: ["committee_id"]
@@ -593,6 +762,7 @@ export type Database = {
           created_at: string | null
           delegate_id: string
           id: string
+          model_id: string
           score: number
           secretary_id: string
         }
@@ -601,6 +771,7 @@ export type Database = {
           created_at?: string | null
           delegate_id: string
           id?: string
+          model_id: string
           score: number
           secretary_id: string
         }
@@ -609,10 +780,19 @@ export type Database = {
           created_at?: string | null
           delegate_id?: string
           id?: string
+          model_id?: string
           score?: number
           secretary_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       requests: {
         Row: {
@@ -620,6 +800,7 @@ export type Database = {
           created_at: string | null
           delegate_id: string
           id: string
+          model_id: string
           profiles: Json | null
           status: string
           type: string
@@ -629,6 +810,7 @@ export type Database = {
           created_at?: string | null
           delegate_id: string
           id?: string
+          model_id: string
           profiles?: Json | null
           status?: string
           type: string
@@ -638,11 +820,19 @@ export type Database = {
           created_at?: string | null
           delegate_id?: string
           id?: string
+          model_id?: string
           profiles?: Json | null
           status?: string
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "requests_committee_id_fkey"
             columns: ["committee_id"]
@@ -666,6 +856,7 @@ export type Database = {
           ended_at: string | null
           id: string
           is_active: boolean | null
+          model_id: string
           secretary_id: string
           started_at: string | null
         }
@@ -675,6 +866,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_active?: boolean | null
+          model_id: string
           secretary_id: string
           started_at?: string | null
         }
@@ -684,10 +876,19 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_active?: boolean | null
+          model_id?: string
           secretary_id?: string
           started_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       speaking_queue: {
         Row: {
@@ -695,6 +896,7 @@ export type Database = {
           completed_at: string | null
           delegate_id: string
           id: string
+          model_id: string
           position: number
           requested_at: string
           started_at: string | null
@@ -707,6 +909,7 @@ export type Database = {
           completed_at?: string | null
           delegate_id: string
           id?: string
+          model_id: string
           position: number
           requested_at?: string
           started_at?: string | null
@@ -719,6 +922,7 @@ export type Database = {
           completed_at?: string | null
           delegate_id?: string
           id?: string
+          model_id?: string
           position?: number
           requested_at?: string
           started_at?: string | null
@@ -741,6 +945,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
         ]
       }
       staff_requests: {
@@ -751,6 +962,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          model_id: string
           priority: string
           requester_id: string
           status: string
@@ -765,6 +977,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          model_id: string
           priority?: string
           requester_id: string
           status?: string
@@ -779,6 +992,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          model_id?: string
           priority?: string
           requester_id?: string
           status?: string
@@ -787,6 +1001,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_staff_requests_user"
             columns: ["user_id"]
@@ -823,6 +1044,7 @@ export type Database = {
           committee_id: string
           created_at: string | null
           id: string
+          model_id: string
           user_id: string
           vote_type: Database["public"]["Enums"]["vote_type"]
           voting_round_id: string | null
@@ -833,6 +1055,7 @@ export type Database = {
           committee_id: string
           created_at?: string | null
           id?: string
+          model_id: string
           user_id: string
           vote_type: Database["public"]["Enums"]["vote_type"]
           voting_round_id?: string | null
@@ -843,12 +1066,20 @@ export type Database = {
           committee_id?: string
           created_at?: string | null
           id?: string
+          model_id?: string
           user_id?: string
           vote_type?: Database["public"]["Enums"]["vote_type"]
           voting_round_id?: string | null
           voting_session_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "votes_committee_id_fkey"
             columns: ["committee_id"]
@@ -863,6 +1094,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          model_id: string
           result: string | null
           round_number: number
           started_at: string | null
@@ -877,6 +1109,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          model_id: string
           result?: string | null
           round_number: number
           started_at?: string | null
@@ -891,6 +1124,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          model_id?: string
           result?: string | null
           round_number?: number
           started_at?: string | null
@@ -901,7 +1135,15 @@ export type Database = {
           votes_for?: number | null
           voting_session_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voting_sessions: {
         Row: {
@@ -916,6 +1158,7 @@ export type Database = {
           id: string
           majority_threshold: number | null
           max_rounds: number | null
+          model_id: string
           started_at: string | null
           status: string
           title: string
@@ -934,6 +1177,7 @@ export type Database = {
           id?: string
           majority_threshold?: number | null
           max_rounds?: number | null
+          model_id: string
           started_at?: string | null
           status?: string
           title: string
@@ -952,19 +1196,32 @@ export type Database = {
           id?: string
           majority_threshold?: number | null
           max_rounds?: number | null
+          model_id?: string
           started_at?: string | null
           status?: string
           title?: string
           veto_members?: string[] | null
           voting_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_model"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_current_model_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_committee: {
         Args: { user_id: string }
         Returns: string
@@ -972,6 +1229,10 @@ export type Database = {
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       register_agenda_participation: {
         Args: {
@@ -981,6 +1242,10 @@ export type Database = {
           p_participation_type?: string
           p_time_used?: number
         }
+        Returns: string
+      }
+      set_current_model: {
+        Args: { model_id_to_set: string }
         Returns: string
       }
     }

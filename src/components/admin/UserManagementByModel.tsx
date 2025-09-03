@@ -54,9 +54,37 @@ export default function UserManagementByModel() {
   const fetchUsers = async () => {
     if (!profile?.model_id) return;
     
-    // Temporarily disable complex query to avoid TypeScript issues
-    const users = []; // Empty array for now
-    setUsers(users);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        countries(name),
+        committees(name)
+      `)
+      .eq('model_id', profile.model_id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los usuarios",
+        variant: "destructive",
+      });
+    } else {
+      const processedUsers: Profile[] = (data || []).map((user: any) => ({
+        id: user.id,
+        full_name: user.full_name,
+        role: user.role,
+        committee_id: user.committee_id,
+        country_id: user.country_id,
+        model_id: user.model_id,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        Photo_url: user.Photo_url,
+        "Entidad que representa": user["Entidad que representa"]
+      }));
+      setUsers(processedUsers);
+    }
 
     setLoading(false);
   };
@@ -64,13 +92,20 @@ export default function UserManagementByModel() {
   const fetchCommittees = async () => {
     if (!profile?.model_id) return;
     
-    // Disable committee fetching for now to avoid type issues  
-    setCommittees([]);
+    const { data } = await supabase
+      .from('committees')
+      .select('id, name, topic, current_status, model_id, created_at, updated_at, session_started_at, session_accumulated_seconds, current_timer_end, current_timer_remaining_seconds')
+      .eq('model_id', profile.model_id)
+      .order('name');
+    setCommittees((data as any) || []);
   };
 
   const fetchCountries = async () => {
-    // Disable countries fetching for now to avoid type issues
-    setCountries([]);
+    const { data } = await supabase
+      .from('countries')
+      .select('*')
+      .order('name');
+    setCountries((data as any) || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

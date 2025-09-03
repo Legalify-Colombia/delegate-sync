@@ -43,32 +43,34 @@ export default function ModelManagement() {
 
   const fetchModels = async () => {
     try {
-      // Use environment variables instead of accessing protected properties
-      const SUPABASE_URL = "https://lsfmaelgwxoqcmzkmaba.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZm1hZWxnd3hvcWNtemttYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMjE1NjUsImV4cCI6MjA3MTc5NzU2NX0.HqX9840nRL48pN4nSX-o2SaRtoxfomaIPK7gkgSSc34";
-      
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/models?select=*&order=created_at.desc`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Use Supabase client with proper types
+      const { data: modelsData, error } = await supabase
+        .from('models')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch models');
-      }
+      if (error) throw error;
 
-      const modelsData = await response.json() as Model[];
-      
       // Process models data with participant counts
       const modelsWithCount: Model[] = [];
       
-      for (const model of modelsData) {
-        // For now, set participant count to 0 to avoid the complex query issue
+      for (const model of (modelsData || [])) {
+        // Fetch participant count for each model
+        const { count } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('model_id', model.id);
+          
         modelsWithCount.push({
-          ...model,
-          participant_count: 0
+          id: model.id,
+          name: model.name,
+          description: model.description,
+          location: model.location,
+          start_date: model.start_date,
+          end_date: model.end_date,
+          logo_url: model.logo_url,
+          created_at: model.created_at,
+          participant_count: count || 0
         });
       }
 
@@ -106,46 +108,24 @@ export default function ModelManagement() {
         logo_url: formData.logo_url || null
       };
 
-      const SUPABASE_URL = "https://lsfmaelgwxoqcmzkmaba.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZm1hZWxnd3hvcWNtemttYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMjE1NjUsImV4cCI6MjA3MTc5NzU2NX0.HqX9840nRL48pN4nSX-o2SaRtoxfomaIPK7gkgSSc34";
-
       if (editingModel) {
-        // Use raw fetch for update
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/models?id=eq.${editingModel.id}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(modelData)
-        });
+        const { error } = await supabase
+          .from('models')
+          .update(modelData)
+          .eq('id', editingModel.id);
 
-        if (!response.ok) {
-          throw new Error('Failed to update model');
-        }
+        if (error) throw error;
         
         toast({
           title: "Éxito",
           description: "Modelo actualizado correctamente",
         });
       } else {
-        // Use raw fetch for insert
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/models`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(modelData)
-        });
+        const { error } = await supabase
+          .from('models')
+          .insert([modelData]);
 
-        if (!response.ok) {
-          throw new Error('Failed to create model');
-        }
+        if (error) throw error;
         
         toast({
           title: "Éxito",
@@ -183,22 +163,12 @@ export default function ModelManagement() {
     if (!confirm('¿Estás seguro de que quieres eliminar este modelo? Esto también eliminará todos los datos asociados.')) return;
 
     try {
-      const SUPABASE_URL = "https://lsfmaelgwxoqcmzkmaba.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZm1hZWxnd3hvcWNtemttYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMjE1NjUsImV4cCI6MjA3MTc5NzU2NX0.HqX9840nRL48pN4nSX-o2SaRtoxfomaIPK7gkgSSc34";
-      
-      // Use raw fetch for delete
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/models?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const { error } = await supabase
+        .from('models')
+        .delete()
+        .eq('id', id);
 
-      if (!response.ok) {
-        throw new Error('Failed to delete model');
-      }
+      if (error) throw error;
 
       toast({
         title: "Éxito",

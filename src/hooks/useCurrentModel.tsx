@@ -34,23 +34,14 @@ export function CurrentModelProvider({ children }: CurrentModelProviderProps) {
 
   const fetchCurrentModel = async (modelId: string) => {
     try {
-      const SUPABASE_URL = "https://lsfmaelgwxoqcmzkmaba.supabase.co";
-      const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZm1hZWxnd3hvcWNtemttYWJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyMjE1NjUsImV4cCI6MjA3MTc5NzU2NX0.HqX9840nRL48pN4nSX-o2SaRtoxfomaIPK7gkgSSc34";
-      
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/models?select=*&id=eq.${modelId}`, {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const { data, error } = await supabase
+        .from('models')
+        .select('*')
+        .eq('id', modelId)
+        .single();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.length > 0) {
-          setCurrentModelState(data[0] as Model);
-        }
-      }
+      if (error) throw error;
+      setCurrentModelState(data as Model);
     } catch (error: any) {
       console.error('Error fetching current model:', error);
     } finally {
