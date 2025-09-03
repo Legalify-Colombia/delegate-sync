@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Activity, MessageSquare, Building, Newspaper, Eye } from 'lucide-react';
 import DetailedStatistics from '@/components/admin/DetailedStatistics';
+import UserManagementByModel from '@/components/admin/UserManagementByModel';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Announcement {
@@ -82,10 +83,14 @@ export default function SecretaryGeneralDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="statistics" className="flex items-center space-x-2">
               <Activity className="h-4 w-4" />
-              <span>Estadísticas del Modelo</span>
+              <span>Estadísticas</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center space-x-2">
+              <Activity className="h-4 w-4" />
+              <span>Usuarios</span>
             </TabsTrigger>
             <TabsTrigger value="committees" className="flex items-center space-x-2">
               <Building className="h-4 w-4" />
@@ -103,6 +108,10 @@ export default function SecretaryGeneralDashboard() {
 
           <TabsContent value="statistics" className="space-y-6">
             <DetailedStatistics />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6">
+            <UserManagementByModel />
           </TabsContent>
 
           <TabsContent value="committees" className="space-y-6">

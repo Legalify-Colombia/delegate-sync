@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Logo } from '@/components/ui/logo';
+import { ModelSelector } from './ModelSelector';
+import { useCurrentModel } from '@/hooks/useCurrentModel';
 
 interface DashboardHeaderProps {
   eventName?: string;
@@ -18,6 +20,7 @@ export function DashboardHeader({ eventName }: DashboardHeaderProps) {
   const [isProfileOpen, setProfileOpen] = useState(false);
   const [isNotificationsOpen, setNotificationsOpen] = useState(false);
   const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { currentModel } = useCurrentModel();
 
   if (!profile) return null;
 
@@ -25,11 +28,23 @@ export function DashboardHeader({ eventName }: DashboardHeaderProps) {
     <header className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Logo size="md" />
+          {/* Logo and Model Info */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Logo size="md" />
+              {currentModel?.logo_url && (
+                <img 
+                  src={currentModel.logo_url} 
+                  alt={currentModel.name}
+                  className="h-8 w-auto object-contain"
+                />
+              )}
+            </div>
+            <div className="hidden sm:block">
+              <ModelSelector />
+            </div>
             {eventName && (
-              <span className="ml-3 font-medium text-muted-foreground hidden sm:block">{eventName}</span>
+              <span className="ml-3 font-medium text-muted-foreground hidden lg:block">{eventName}</span>
             )}
           </div>
 

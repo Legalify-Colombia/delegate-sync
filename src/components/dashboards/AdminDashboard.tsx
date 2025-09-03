@@ -9,6 +9,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import CommitteeManagement from '@/components/admin/CommitteeManagement';
 import CountryManagement from '@/components/admin/CountryManagement';
 import SystemOverview from '@/components/admin/SystemOverview';
+import ModelManagement from '@/components/admin/ModelManagement';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
               <div className="bg-white p-1 rounded-xl shadow-md flex items-center justify-around space-x-1">
                 {[
                   { id: 'overview', label: 'Resumen', icon: Activity },
+                  { id: 'models', label: 'Modelos', icon: Building },
                   { id: 'users', label: 'Usuarios', icon: Users },
                   { id: 'committees', label: 'Comités', icon: Building },
                   { id: 'countries', label: 'Países', icon: Globe },
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
                 className="bg-white p-4 sm:p-6 rounded-xl shadow-md"
               >
                 {activeTab === 'overview' && <SystemOverview />}
+                {activeTab === 'models' && <ModelManagement />}
                 {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'committees' && <CommitteeManagement />}
                 {activeTab === 'countries' && <CountryManagement />}

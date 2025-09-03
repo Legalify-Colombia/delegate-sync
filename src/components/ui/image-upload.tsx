@@ -41,9 +41,10 @@ export function ImageUpload({ onImageUploaded, currentImage, label = "Imagen", c
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload to Supabase storage
+      // Upload to Supabase storage - use logo-models bucket for logos
+      const bucket = 'logo-models';
       const { error, data } = await supabase.storage
-        .from('news-images')
+        .from(bucket)
         .upload(fileName, file);
 
       if (error) {
@@ -52,7 +53,7 @@ export function ImageUpload({ onImageUploaded, currentImage, label = "Imagen", c
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('news-images')
+        .from(bucket)
         .getPublicUrl(fileName);
 
       setPreviewUrl(publicUrl);

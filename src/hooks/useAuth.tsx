@@ -9,6 +9,7 @@ interface Profile {
   role: 'admin' | 'secretary_general' | 'committee_secretary' | 'communications_secretary' | 'delegate' | 'staff' | 'press';
   committee_id: string | null;
   country_id: string | null;
+  model_id?: string | null;
 }
 
 interface AuthContextType {
